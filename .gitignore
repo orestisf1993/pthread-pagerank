@@ -53,6 +53,9 @@
 assignment_4
 bin/
 
+# Allow cmake
+!CMakeLists.txt
+
 # latex
 *.fmt
 *.aux
