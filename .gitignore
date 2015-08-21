@@ -1,0 +1,78 @@
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Compressed Files
+*.tar.*
+*.tar
+
+# Text/Log Files
+*.txt
+*.swp
+*.log
+*.pdf
+*.bin
+*.idea
+
+# Python
+*.pyc
+.ropeproject/
+
+# Images
+*.png
+*.plt
+*.cvdata
+
+# Explicit binaries
+assignment_4
+bin/
+
+# latex
+*.fmt
+*.aux
+*.glo
+*.idx
+*.toc
+*.ist
+*.acn
+*.acr
+*.alg
+*.bbl
+*.blg
+*.dvi
+*.glg
+*.gls
+*.ilg
+*.ind
+*.lof
+*.lot
+*.maf
+*.mtc
+*.mtc1
+*.synctex.gz
