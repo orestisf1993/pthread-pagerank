@@ -22,10 +22,10 @@ typedef uint32_t node_id;
 #endif
 typedef node_id **graph;
 
-void print_nodes(node_id **array, size_t *sizes, size_t N);
-void read_from_file(const char *filename, graph *_array, size_t **_sizes, size_t *total_lines);
+void print_nodes(node_id **array, node_id *sizes, node_id N);
+void read_from_file(const char *filename, graph *_array, node_id **_sizes, node_id *total_lines);
 
-void read_from_file(const char *filename, graph *_array, size_t **_sizes, size_t *total_lines) {
+void read_from_file(const char *filename, graph *_array, node_id **_sizes, node_id *total_lines) {
     FILE *fp = fopen(filename, "r");
     if (fp == NULL) exit(E_FILE_ERROR);
     fprintf(stderr, "opened %s\n", filename);
@@ -36,7 +36,7 @@ void read_from_file(const char *filename, graph *_array, size_t **_sizes, size_t
     node_id largest_idx = 0;
     // must initialize first element because idx = 0 is never > largest_idx
     graph array = malloc(sizeof(*array));
-    size_t *sizes = malloc(sizeof(size_t));
+    node_id *sizes = malloc(sizeof(node_id));
     array[0] = NULL;
     sizes[0] = 0;
 
@@ -75,7 +75,7 @@ void read_from_file(const char *filename, graph *_array, size_t **_sizes, size_t
     *total_lines = largest_idx + 1;
 }
 
-void print_nodes(node_id **array, size_t *sizes, size_t N) {
+void print_nodes(node_id **array, node_id *sizes, node_id N) {
     for (unsigned int i = 0; i < N; i++) {
         printf("%u-> ", i);
         for (unsigned int j = 0; j < sizes[i]; j++) {
@@ -87,8 +87,8 @@ void print_nodes(node_id **array, size_t *sizes, size_t N) {
 
 int main(void) {
     node_id **array = NULL;
-    size_t *sizes = NULL;
-    size_t N;
+    node_id *sizes = NULL;
+    node_id N;
     read_from_file("nodes.txt", &array, &sizes, &N);
     print_nodes(array, sizes, N);
 
