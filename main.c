@@ -32,7 +32,6 @@ void read_from_file(const char *filename, graph *_array, node_id **_sizes, node_
 
     char *line = NULL;
     size_t len = 0;
-    node_id idx;
     node_id largest_idx = 0;
     // must initialize first element because idx = 0 is never > largest_idx
     graph array = malloc(sizeof(*array));
@@ -45,7 +44,10 @@ void read_from_file(const char *filename, graph *_array, node_id **_sizes, node_
         if (line[0] == '#') continue;
         // assuming that the first token is the node index
         char *token = strtok(line, " ");
-        idx = (unsigned int) atol(token);
+        node_id target = (unsigned int) atol(token);
+        // assuming one pair for each line
+        token = strtok(NULL, " ");
+        node_id idx = (unsigned int) atol(token);
 
         if (idx > largest_idx) {
             array = realloc(array, (idx + 1) * sizeof(*array));
@@ -64,9 +66,7 @@ void read_from_file(const char *filename, graph *_array, node_id **_sizes, node_
         array[idx] = realloc(array[idx], (++sizes[idx]) * sizeof(node_id));
         if (array[idx] == NULL) exit(E_MALLOC_ERROR);
 
-        // assuming that only one
-        token = strtok(NULL, " ");
-        array[idx][sizes[idx] - 1] = (unsigned int) atol(token);
+        array[idx][sizes[idx] - 1] = target;
     }
 
     fclose(fp);
@@ -77,7 +77,7 @@ void read_from_file(const char *filename, graph *_array, node_id **_sizes, node_
 
 void print_nodes(node_id **array, node_id *sizes, node_id N) {
     for (unsigned int i = 0; i < N; i++) {
-        printf("%u-> ", i);
+        printf("%u<- ", i);
         for (unsigned int j = 0; j < sizes[i]; j++) {
             printf("%u ", array[i][j]);
         }
