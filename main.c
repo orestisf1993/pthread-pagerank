@@ -1,16 +1,16 @@
 #include <stdio.h>
-//#include <pthread.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 //#include <time.h>
 
-//#define NTHREADS 6
+#define NTHREADS 6
 #define MILLION 1000000
 #define NODES_FILENAME "nodes.txt"
 #define RESULTS_FILENAME "result.txt"
 
-#define max(a,b) \
+#define max(a, b) \
    ({ typeof (a) _a = (a); \
        typeof (b) _b = (b); \
      _a > _b ? _a : _b; })
@@ -29,7 +29,7 @@ typedef uint32_t node_id;
 #endif
 typedef node_id **graph;
 
-void calculate_gen(void);
+void *calculate_gen(void *_args);
 void print_nodes(node_id **array, node_id *sizes, node_id size);
 void read_from_file(const char *filename);
 void print_gen(void);
@@ -108,9 +108,9 @@ float *E;
 float *P_new;
 
 void init_prob(void) {
-    P = malloc(N*sizeof(float));
-    P_new = malloc(N*sizeof(float));
-    E = malloc(N*sizeof(float));
+    P = malloc(N * sizeof(float));
+    P_new = malloc(N * sizeof(float));
+    E = malloc(N * sizeof(float));
 //    float sumP = 0.0f;
 //    float sumE = 0.0f;
 //    srand(time(NULL));
@@ -122,37 +122,53 @@ void init_prob(void) {
 //        sumP += P[i];
 //        sumE += E[i];
 //    }
-    for (node_id i = 0; i < N; i++){
+    for (node_id i = 0; i < N; i++) {
 //        P[i] /= sumP;
 //        E[i] /= sumE;
-        P[i] = E[i] = 1/(float)N;   // uniform distribution
+        P[i] = E[i] = 1 / (float) N;   // uniform distribution
         // Any node with no out links is linked to all nodes to emulate the matlab script.
-        if (!n_outbound[i]){
-            no_outbounds = realloc(no_outbounds, (++size_no_out)*sizeof(node_id));
-            no_outbounds[size_no_out-1] = i;
+        if (!n_outbound[i]) {
+            no_outbounds = realloc(no_outbounds, (++size_no_out) * sizeof(node_id));
+            no_outbounds[size_no_out - 1] = i;
         }
     }
 }
 
+pthread_barrier_t barrier;
+typedef struct {
+    pthread_t tid;
+} parm;
+
 #define D 0.85f
-void calculate_gen(void) {
-    for (node_id i = 0; i < N; i++){
-        float link_prob = 0;
-        for (node_id x = 0; x < n_inbound[i]; x++){
-            node_id j = L[i][x];
-            link_prob += P[j] / n_outbound[j];
+
+void *calculate_gen(void *_args) {
+    parm *args = (parm *) _args;
+    node_id chunk = N / NTHREADS;
+    node_id start = (node_id) (args->tid) * chunk;
+    node_id end = start + chunk + (args->tid == NTHREADS - 1) * (N % NTHREADS);
+    for (int gen = 0; gen < 100; gen++) {
+        for (node_id i = start; i < end; i++) {
+            float link_prob = 0;
+            for (node_id x = 0; x < n_inbound[i]; x++) {
+                node_id j = L[i][x];
+                link_prob += P[j] / n_outbound[j];
+            }
+            for (node_id x = 0; x < size_no_out; x++) {
+                node_id j = no_outbounds[x];
+                link_prob += P[j] / (float) N;
+            }
+            P_new[i] = D * link_prob + (1 - D) * E[i];
         }
-        for (node_id x = 0; x < size_no_out; x++){
-            node_id j = no_outbounds[x];
-            link_prob += P[j] / (float) N;
+        int res = pthread_barrier_wait(&barrier);
+        if (res == PTHREAD_BARRIER_SERIAL_THREAD) {
+            //swap P_new with P.
+            float *tmp;
+            tmp = P;
+            P = P_new;
+            P_new = tmp;
         }
-        P_new[i] = D * link_prob + (1 - D) * E[i];
     }
-    //swap P_new with P.
-    float *tmp;
-    tmp = P;
-    P = P_new;
-    P_new = tmp;
+    return NULL;
 }
 
 void print_gen(void) {
@@ -169,8 +185,20 @@ int main(void) {
     init_prob();
 
     fprintf(stderr, "Read %ux%u graph\n", N, N);
+    pthread_barrier_init(&barrier, NULL, NTHREADS);
     print_gen();
-    for (int i=0; i<100; i++) calculate_gen();
+
+    pthread_t threads[NTHREADS];
+    parm args[NTHREADS];
+    for (pthread_t i = 0; i < NTHREADS; i++) {
+        args[i].tid = i;
+        pthread_create(&threads[i], NULL, calculate_gen, (void *) &args[i]);
+    }
+
+    for (pthread_t i = 0; i < NTHREADS; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
     print_gen();
     return EXIT_SUCCESS;
 }
