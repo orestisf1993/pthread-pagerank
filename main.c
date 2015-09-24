@@ -103,11 +103,74 @@ void print_nodes(node_id **array, node_id *sizes, node_id size) {
     }
 }
 
+float *P;
+float *E;
+float *P_new;
+
+void init_prob(void) {
+    P = malloc(N*sizeof(float));
+    P_new = malloc(N*sizeof(float));
+    E = malloc(N*sizeof(float));
+//    float sumP = 0.0f;
+//    float sumE = 0.0f;
+//    srand(time(NULL));
+//    for (node_id i = 0; i < N; i++){
+//        int r = rand();
+//        P[i] = (float)r/(float)(RAND_MAX);
+//        r = rand();
+//        E[i] = (float)r/(float)(RAND_MAX);
+//        sumP += P[i];
+//        sumE += E[i];
+//    }
+    for (node_id i = 0; i < N; i++){
+//        P[i] /= sumP;
+//        E[i] /= sumE;
+        P[i] = E[i] = 1/(float)N;   // uniform distribution
+        // Any node with no out links is linked to all nodes to emulate the matlab script.
+        if (!n_outbound[i]){
+            no_outbounds = realloc(no_outbounds, (++size_no_out)*sizeof(node_id));
+            no_outbounds[size_no_out-1] = i;
+        }
+    }
+}
+
+#define D 0.85f
+void calculate_gen(void) {
+    for (node_id i = 0; i < N; i++){
+        float link_prob = 0;
+        for (node_id x = 0; x < n_inbound[i]; x++){
+            node_id j = L[i][x];
+            link_prob += P[j] / n_outbound[j];
+        }
+        for (node_id x = 0; x < size_no_out; x++){
+            node_id j = no_outbounds[x];
+            link_prob += P[j] / (float) N;
+        }
+        P_new[i] = D * link_prob + (1 - D) * E[i];
+    }
+    //swap P_new with P.
+    float *tmp;
+    tmp = P;
+    P = P_new;
+    P_new = tmp;
+}
+
+void print_gen(void) {
+    FILE *fp = fopen(RESULTS_FILENAME, "a");
+    for (node_id i = 0; i < N; i++) fprintf(fp, "%f ", P[i]);
+    fprintf(fp, "\n");
+    fclose(fp);
+}
+
 int main(void) {
 
     read_from_file(NODES_FILENAME);
     print_nodes(L, n_inbound, N);
+    init_prob();
 
     fprintf(stderr, "Read %ux%u graph\n", N, N);
+    print_gen();
+    for (int i=0; i<100; i++) calculate_gen();
+    print_gen();
     return EXIT_SUCCESS;
 }
