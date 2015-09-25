@@ -195,9 +195,9 @@ int main(int argc, char **argv) {
 
     static struct option long_options[] = {
             {"nodesfile", required_argument, 0, 'n'},
-            {"nthreads",  required_argument, 0, 't'},
-            {"help",      no_argument,       0, 'h'},
-            {0, 0,                           0, 0}
+            {"nthreads", required_argument, 0, 't'},
+            {"help", no_argument, 0, 'h'},
+            {0, 0, 0, 0}
     };
 
     while (1) {
