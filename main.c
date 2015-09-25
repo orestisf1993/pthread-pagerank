@@ -3,11 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <getopt.h>
 //#include <time.h>
 
-#define NTHREADS 6
+#define DEFAULT_NTHREADS 4
 #define MILLION 1000000
-#define NODES_FILENAME "nodes.txt"
+#define DEFAULT_NODES_FILENAME "nodes.txt"
 #define RESULTS_FILENAME "result.txt"
 
 #define max(a, b) \
@@ -17,7 +18,8 @@
 
 enum conf_errors {
     E_FILE_ERROR = 200,
-    E_MALLOC_ERROR
+    E_MALLOC_ERROR,
+    E_UNRECOGNISED_ARGUMENT
 };
 
 // must fit 10^6 elements
@@ -34,6 +36,7 @@ void print_nodes(node_id **array, node_id *sizes, node_id size);
 void read_from_file(const char *filename);
 void print_gen(void);
 void init_prob(void);
+void print_usage(char **argv);
 
 graph L = NULL;
 node_id *n_inbound = NULL;
@@ -136,16 +139,16 @@ void init_prob(void) {
 
 pthread_barrier_t barrier;
 typedef struct {
-    pthread_t tid;
+    unsigned int tid;
 } parm;
 
 #define D 0.85f
 
 void *calculate_gen(void *_args) {
     parm *args = (parm *) _args;
-    node_id chunk = N / NTHREADS;
+    node_id chunk = N / DEFAULT_NTHREADS;
     node_id start = (node_id) (args->tid) * chunk;
-    node_id end = start + chunk + (args->tid == NTHREADS - 1) * (N % NTHREADS);
+    node_id end = start + chunk + (args->tid == DEFAULT_NTHREADS - 1) * (N % DEFAULT_NTHREADS);
     for (int gen = 0; gen < 100; gen++) {
         for (node_id i = start; i < end; i++) {
             float link_prob = 0;
@@ -178,24 +181,61 @@ void print_gen(void) {
     fclose(fp);
 }
 
-int main(void) {
+void print_usage(char **argv) {
+    fprintf(stderr, "usage: %s [options]\n\n"
+                    "    -n, --nodesfile=FILENAME: File to use for input graph.\n"
+                    "    -t, --nthreads=NUM: Number of threads used to run pagerank.\n",
+            argv[0]);
+}
 
-    read_from_file(NODES_FILENAME);
+int main(int argc, char **argv) {
+
+    const char *filename = DEFAULT_NODES_FILENAME;
+    unsigned int nthreads = DEFAULT_NTHREADS;
+
+    static struct option long_options[] = {
+            {"nodesfile", required_argument, 0, 'n'},
+            {"nthreads",  required_argument, 0, 't'},
+            {"help",      no_argument,       0, 'h'},
+            {0, 0,                           0, 0}
+    };
+
+    while (1) {
+        int opt = getopt_long(argc, argv, "n:t:h", long_options, NULL);
+        if (opt == -1) break;
+        switch (opt) {
+            case 'n':
+                filename = optarg;
+                break;
+            case 't':
+                nthreads = (unsigned int) strtoul(optarg, NULL, 0);
+                break;
+            case 'h':
+                print_usage(argv);
+                exit(EXIT_SUCCESS);
+            default:
+                print_usage(argv);
+                exit(E_UNRECOGNISED_ARGUMENT);
+        }
+    }
+
+    fprintf(stderr, "opening file %s, operating with %u threads\n", filename, nthreads);
+    read_from_file(filename);
     print_nodes(L, n_inbound, N);
     init_prob();
 
     fprintf(stderr, "Read %ux%u graph\n", N, N);
-    pthread_barrier_init(&barrier, NULL, NTHREADS);
+    pthread_barrier_init(&barrier, NULL, nthreads);
     print_gen();
 
-    pthread_t threads[NTHREADS];
-    parm args[NTHREADS];
-    for (pthread_t i = 0; i < NTHREADS; i++) {
+    pthread_t *threads = malloc(nthreads * sizeof(pthread_t));
+    parm *args = malloc(nthreads * sizeof(parm));
+    for (unsigned int i = 0; i < nthreads; i++) {
         args[i].tid = i;
         pthread_create(&threads[i], NULL, calculate_gen, (void *) &args[i]);
     }
 
-    for (pthread_t i = 0; i < NTHREADS; i++) {
+    for (unsigned int i = 0; i < nthreads; i++) {
         pthread_join(threads[i], NULL);
     }
 
