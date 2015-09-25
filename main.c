@@ -45,6 +45,8 @@ node_id *no_outbounds = NULL;
 node_id N = 0;
 node_id size_no_out = 0;
 
+unsigned int nthreads = DEFAULT_NTHREADS;
+
 void read_from_file(const char *filename) {
     FILE *fp = fopen(filename, "r");
     if (fp == NULL) exit(E_FILE_ERROR);
@@ -58,15 +60,16 @@ void read_from_file(const char *filename) {
     n_outbound = malloc(sizeof(node_id));
     L[0] = NULL;
     n_inbound[0] = 0;
+    n_outbound[0] = 0;
 
     while (getline(&line, &len, fp) != -1) {
         // skip comments in nodes file.
         if (line[0] == '#') continue;
         // assuming that the first token is the node index
-        char *token = strtok(line, " ");
+        char *token = strtok(line, "\t ");
         node_id target = (unsigned int) atol(token);
         // assuming one pair for each line
-        token = strtok(NULL, " ");
+        token = strtok(NULL, "\t ");
         node_id idx = (unsigned int) atol(token);
 
         node_id biggest = max(idx, target);
@@ -146,10 +149,11 @@ typedef struct {
 
 void *calculate_gen(void *_args) {
     parm *args = (parm *) _args;
-    node_id chunk = N / DEFAULT_NTHREADS;
+    node_id chunk = N / nthreads;
     node_id start = (node_id) (args->tid) * chunk;
-    node_id end = start + chunk + (args->tid == DEFAULT_NTHREADS - 1) * (N % DEFAULT_NTHREADS);
-    for (int gen = 0; gen < 100; gen++) {
+    node_id end = start + chunk + (args->tid == nthreads - 1) * (N % nthreads);
+    fprintf(stderr, "tid %u, start %u, end %u\n", args->tid, start, end);
+    for (int gen = 0; gen < 1; gen++) {
         for (node_id i = start; i < end; i++) {
             float link_prob = 0;
             for (node_id x = 0; x < n_inbound[i]; x++) {
@@ -157,6 +161,7 @@ void *calculate_gen(void *_args) {
                 link_prob += P[j] / n_outbound[j];
             }
             for (node_id x = 0; x < size_no_out; x++) {
+                // TODO: calculate once for each gen.
                 node_id j = no_outbounds[x];
                 link_prob += P[j] / (float) N;
             }
@@ -191,7 +196,6 @@ void print_usage(char **argv) {
 int main(int argc, char **argv) {
 
     const char *filename = DEFAULT_NODES_FILENAME;
-    unsigned int nthreads = DEFAULT_NTHREADS;
 
     static struct option long_options[] = {
             {"nodesfile", required_argument, 0, 'n'},
@@ -234,11 +238,9 @@ int main(int argc, char **argv) {
         args[i].tid = i;
         pthread_create(&threads[i], NULL, calculate_gen, (void *) &args[i]);
     }
-
     for (unsigned int i = 0; i < nthreads; i++) {
         pthread_join(threads[i], NULL);
     }
-
     print_gen();
     return EXIT_SUCCESS;
 }
