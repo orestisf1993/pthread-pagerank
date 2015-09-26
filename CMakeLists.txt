@@ -34,6 +34,6 @@ set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -O0 -g -gdwarf-3 -DDEBUG")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} -O3")
 
 set(SOURCE_FILES main.c io.c utils.h)
-add_executable(assignment_4 ${SOURCE_FILES} io.c utils.h)
+add_executable(assignment_4 ${SOURCE_FILES})
 target_link_libraries(assignment_4 ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(assignment_4 m)
