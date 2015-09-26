@@ -8,7 +8,7 @@
 #define MILLION 1000000
 #define MAX_ERROR 0.000001f
 #define DEFAULT_NODES_FILENAME "nodes.txt"
-#define RESULTS_FILENAME "result.txt"
+#define RESULTS_FILENAME "time_result.txt"
 
 #define max(a, b) \
     ({ typeof(a) _a = (a); \
@@ -43,9 +43,10 @@ typedef struct {
 
 void *calculate_gen(void *_args);
 void read_from_file(const char *filename);
-void print_gen(void);
+void print_gen(char * filename);
 void init_prob(void);
 void print_usage(char **argv);
+void save_res(int size ,int threads,uintptr_t final_gen, double time);
 parm *split_work(int smart_split);
 
 extern graph L;
