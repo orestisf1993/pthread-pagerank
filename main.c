@@ -141,35 +141,38 @@ typedef struct {
 
 int running = 1;
 int *local_terminate_flag;
-#define D 0.85f
 
+#define D 0.85f
 void *calculate_gen(void *_args) {
-    parm *args = (parm *) _args;
-    node_id chunk = N / nthreads;
-    node_id start = (node_id) (args->tid) * chunk;
-    node_id end = start + chunk + (args->tid == nthreads - 1) * (N % nthreads);
-    fprintf(stderr, "tid %u, start %u, end %u\n", args->tid, start, end);
+    const parm *args = (parm *) _args;
+    const node_id chunk = N / nthreads;
+    const unsigned int tid = args->tid;
+    const node_id start = (node_id) (tid) * chunk;
+    const node_id end = start + chunk + (tid == nthreads - 1) * (N % nthreads);
+    fprintf(stderr, "tid %u, start %u, end %u\n", tid, start, end);
 
     // initialize for uniform distribution.
     //TODO: test make it global/shared between threads.
     float constant_add = (float) size_no_out / (float) (N) / (float) N;
     unsigned int gen;
     for (gen = 0; ; gen++) {
-        local_terminate_flag[args->tid] = 1;
+        local_terminate_flag[tid] = 1;
         for (node_id i = start; i < end; i++) {
             float link_prob = 0;
             for (node_id x = 0; x < n_inbound[i]; x++) {
-                node_id j = L[i][x];
+                const node_id j = L[i][x];
                 link_prob += P[j] / n_outbound[j];
             }
             link_prob += constant_add;
 
             P_new[i] = D * link_prob + (1 - D) * E[i];
-            if (local_terminate_flag[args->tid] && fabsf(P_new[i] - P[i]) > MAX_ERROR) {
-                local_terminate_flag[args->tid] = 0;
+            if (local_terminate_flag[tid]) {
+                if (fabsf(P_new[i] - P[i]) > MAX_ERROR) {
+                    local_terminate_flag[tid] = 0;
+                }
             }
         }
-        int res = pthread_barrier_wait(&barrier);
+        const int res = pthread_barrier_wait(&barrier);
         if (res == PTHREAD_BARRIER_SERIAL_THREAD) {
             //swap P_new with P.
             float *tmp;
@@ -177,25 +180,25 @@ void *calculate_gen(void *_args) {
             P = P_new;
             P_new = tmp;
 
-        }
-        running = 0;
-        for (unsigned int i = 0; i < nthreads; i++) {
-            if (!local_terminate_flag[i]) {
-                running = 1;
-                break;
+            running = 0;
+            for (unsigned int i = 0; i < nthreads; i++) {
+                if (!local_terminate_flag[i]) {
+                    running = 1;
+                    break;
+                }
             }
         }
 
         pthread_barrier_wait(&barrier); //TODO: is this needed?
-        if (!running) break; // exit serial thread without making the constant calculations.
+        if (!running) pthread_exit(tid ? NULL : (void *) (uintptr_t) gen);
+        constant_add = 0.0f;
         // calculate the constant for links without outbound links.
         for (node_id x = 0; x < size_no_out; x++) {
-            node_id j = no_outbounds[x];
+            const node_id j = no_outbounds[x];
             constant_add += P[j];
         }
         constant_add /= (float) N;
     }
-    pthread_exit(args->tid ? NULL : (void *) (uintptr_t) gen);
 }
 
 void print_gen(void) {
@@ -270,5 +273,8 @@ int main(int argc, char **argv) {
             ((end.tv_usec - start.tv_usec) / 1000000.0);
     fprintf(stderr, "finished on generation %lu after %g sec\n", (uintptr_t) final_gen, elapsed);
     print_gen();
+    float sum = 0;
+    for (node_id i = 0; i < N; i++) sum += P[i];
+    fprintf(stderr, "sum=%f\n", sum);
     return EXIT_SUCCESS;
 }
