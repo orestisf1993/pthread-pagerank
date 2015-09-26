@@ -8,7 +8,7 @@ call("mkdir -p time_results", shell=True)
 call("mkdir -p gen_results", shell=True)
 
 call("rm -f time_results/*.txt", shell=True)
-call("rm -f gen_results/*.txt", shell=True)
+call("rm -f gen_results/*.bin", shell=True)
 
 nodefiles = os.listdir("nodeFiles")
 print(nodefiles)
@@ -20,4 +20,4 @@ for file in nodefiles:
         call(command, shell=True)
 
 call("mv time_results.txt time_results/", shell=True)
-call("mv *results.txt gen_results/", shell=True)
+call("mv *results.bin gen_results/", shell=True)

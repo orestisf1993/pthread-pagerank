@@ -73,13 +73,12 @@ void read_from_file(const char *filename) {
 void print_gen(unsigned int nthreads) {
     char size[15];
     sprintf(size, "%d_%d", N, nthreads);
-    char *filename = malloc(strlen(size) + strlen("_results.txt") + 1);
+    char *filename = malloc(strlen(size) + strlen("_results.bin") + 1);
     strcpy(filename, size);
-    strcat(filename, "_results.txt");
+    strcat(filename, "_results.bin");
 
-    FILE *fp = fopen(filename, "w");
-    for (node_id i = 0; i < N; i++) fprintf(fp, "%f ", P[i]);
-    fprintf(fp, "\n");
+    FILE *fp = fopen(filename, "wb");
+    fwrite(P, sizeof(float), N, fp);
 
     free(filename);
     fclose(fp);

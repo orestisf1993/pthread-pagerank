@@ -1,5 +1,5 @@
-function P = get_results(results_filepath)
+function P = get_results(results_filepath, N)
 
-f = fopen(results_filepath,'r');
-P = fscanf(f,'%f',[1 Inf]);
-P = P';
+f = fopen(results_filepath);
+P = fread(f, N, 'float');
+fclose(f);

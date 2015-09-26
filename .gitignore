@@ -36,7 +36,6 @@
 *.txt
 *.swp
 *.log
-*.pdf
 *.bin
 *.idea
 
@@ -44,10 +43,12 @@
 *.pyc
 .ropeproject/
 
-# Images
+# Images / pdfs
 *.png
 *.plt
 *.cvdata
+*.pdf
+*.eps
 
 # Explicit binaries
 assignment_4
