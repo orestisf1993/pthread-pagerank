@@ -8,7 +8,7 @@
 #define MILLION 1000000
 #define MAX_ERROR 0.000001f
 #define DEFAULT_NODES_FILENAME "nodes.txt"
-#define RESULTS_FILENAME "time_result.txt"
+#define RESULTS_FILENAME "time_results.txt"
 
 #define max(a, b) \
     ({ typeof(a) _a = (a); \
