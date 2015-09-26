@@ -117,6 +117,7 @@ void read_from_file(const char *filename) {
     }
 
     fclose(fp);
+    free(line);
     N++;
 }
 
@@ -342,5 +343,9 @@ int main(int argc, char **argv) {
     prob_type sum = 0;
     for (node_id i = 0; i < N; i++) sum += P[i];
     fprintf(stderr, "sum=%f\n", sum);
+
+    free(args);
+    free(threads);
+
     return EXIT_SUCCESS;
 }
