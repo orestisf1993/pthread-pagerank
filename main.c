@@ -199,7 +199,7 @@ void *calculate_gen(void *_args) {
 }
 
 void print_gen(void) {
-    FILE *fp = fopen(RESULTS_FILENAME, "a");
+    FILE *fp = fopen(RESULTS_FILENAME, "w");
     for (node_id i = 0; i < N; i++) fprintf(fp, "%f ", P[i]);
     fprintf(fp, "\n");
     fclose(fp);
