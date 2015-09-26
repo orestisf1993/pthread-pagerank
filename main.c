@@ -144,18 +144,21 @@ void *calculate_gen(void *_args) {
     node_id start = (node_id) (args->tid) * chunk;
     node_id end = start + chunk + (args->tid == nthreads - 1) * (N % nthreads);
     fprintf(stderr, "tid %u, start %u, end %u\n", args->tid, start, end);
-    for (int gen = 0; gen < 1; gen++) {
+
+    // initialize for uniform distribution.
+    //TODO: test make it global/shared between threads.
+    float constant_add = (float) size_no_out / (float) (N) / (float) N;
+
+    //TODO: terminate after pagerank converges instead of constant number of iterations.
+    for (int gen = 0; gen < 10; gen++) {
         for (node_id i = start; i < end; i++) {
             float link_prob = 0;
             for (node_id x = 0; x < n_inbound[i]; x++) {
                 node_id j = L[i][x];
                 link_prob += P[j] / n_outbound[j];
             }
-            for (node_id x = 0; x < size_no_out; x++) {
-                // TODO: calculate once for each gen.
-                node_id j = no_outbounds[x];
-                link_prob += P[j] / (float) N;
-            }
+            link_prob += constant_add;
+
             P_new[i] = D * link_prob + (1 - D) * E[i];
         }
         int res = pthread_barrier_wait(&barrier);
@@ -165,7 +168,15 @@ void *calculate_gen(void *_args) {
             tmp = P;
             P = P_new;
             P_new = tmp;
+
         }
+        // calculate the constant for links without outbound links.
+        for (node_id x = 0; x < size_no_out; x++) {
+            node_id j = no_outbounds[x];
+            constant_add += P[j];
+        }
+        constant_add /= (float) N;
+        pthread_barrier_wait(&barrier); //TODO: is this needed?
     }
     return NULL;
 }

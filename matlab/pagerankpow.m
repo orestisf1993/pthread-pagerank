@@ -9,7 +9,7 @@ function [x,cnt] = pagerankpow(G)
 
 % Link structure
 
-[n,n] = size(G);
+[~,n] = size(G);
 for j = 1:n
    L{j} = find(G(:,j));
    c(j) = length(L{j});
@@ -22,6 +22,7 @@ delta = (1-p)/n;
 x = ones(n,1)/n;
 z = zeros(n,1);
 cnt = 0;
+% This condition is never satisfied for big G (eg 1M x 1M).
 while max(abs(x-z)) > .0001
    z = x;
    x = zeros(n,1);
