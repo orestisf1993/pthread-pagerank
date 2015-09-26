@@ -11,8 +11,8 @@ function [x,cnt] = pagerankpow(G)
 
 [~,n] = size(G);
 for j = 1:n
-   L{j} = find(G(:,j));
-   c(j) = length(L{j});
+   L{j} = find(G(:,j));%Find all indexes of  the non zero values of G for each node
+   c(j) = length(L{j});% the length of L(j) is the number of nodes it is connected to
 end
 
 % Power method
@@ -23,7 +23,8 @@ x = ones(n,1)/n;
 z = zeros(n,1);
 cnt = 0;
 % This condition is never satisfied for big G (eg 1M x 1M).
-while max(abs(x-z)) > .0001
+% True if final iteration had a minimal effect on  the values of the p vector
+while max(abs(x-z)) > .0001 
    z = x;
    x = zeros(n,1);
    for j = 1:n
