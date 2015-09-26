@@ -6,10 +6,12 @@
 #include <limits.h>
 #include <getopt.h>
 #include <stdint.h>
+#include <math.h>
 //#include <time.h>
 
 #define DEFAULT_NTHREADS 4
 #define MILLION 1000000
+#define MAX_ERROR 0.000001f
 #define DEFAULT_NODES_FILENAME "nodes.txt"
 #define RESULTS_FILENAME "result.txt"
 
@@ -136,6 +138,8 @@ typedef struct {
     unsigned int tid;
 } parm;
 
+int running = 1;
+int *local_terminate_flag;
 #define D 0.85f
 
 void *calculate_gen(void *_args) {
@@ -149,8 +153,8 @@ void *calculate_gen(void *_args) {
     //TODO: test make it global/shared between threads.
     float constant_add = (float) size_no_out / (float) (N) / (float) N;
     unsigned int gen;
-    //TODO: terminate after pagerank converges instead of constant number of iterations.
-    for (gen = 0; gen < 10; gen++) {
+    for (gen = 0; running; gen++) {
+        local_terminate_flag[args->tid] = 1;
         for (node_id i = start; i < end; i++) {
             float link_prob = 0;
             for (node_id x = 0; x < n_inbound[i]; x++) {
@@ -160,6 +164,9 @@ void *calculate_gen(void *_args) {
             link_prob += constant_add;
 
             P_new[i] = D * link_prob + (1 - D) * E[i];
+            if (local_terminate_flag[args->tid] && fabsf(P_new[i] - P[i]) > MAX_ERROR) {
+                local_terminate_flag[args->tid] = 0;
+            }
         }
         int res = pthread_barrier_wait(&barrier);
         if (res == PTHREAD_BARRIER_SERIAL_THREAD) {
@@ -170,6 +177,14 @@ void *calculate_gen(void *_args) {
             P_new = tmp;
 
         }
+        running = 0;
+        for (unsigned int i = 0; i < nthreads; i++) {
+            if (!local_terminate_flag[i]) {
+                running = 1;
+                break;
+            }
+        }
+        if (!running) break; // exit serial thread without making the constant calculations.
         // calculate the constant for links without outbound links.
         for (node_id x = 0; x < size_no_out; x++) {
             node_id j = no_outbounds[x];
@@ -200,7 +215,7 @@ int main(int argc, char **argv) {
     const char *filename = DEFAULT_NODES_FILENAME;
 
     static struct option long_options[] = {
-            {"nodesfile", required_argument, 0, 'n'},
+            {"nodes-file", required_argument, 0, 'n'},
             {"nthreads", required_argument, 0, 't'},
             {"help", no_argument, 0, 'h'},
             {0, 0, 0, 0}
@@ -233,6 +248,7 @@ int main(int argc, char **argv) {
     pthread_barrier_init(&barrier, NULL, nthreads);
 
     pthread_t *threads = malloc(nthreads * sizeof(pthread_t));
+    local_terminate_flag = malloc(nthreads * sizeof(int));
     parm *args = malloc(nthreads * sizeof(parm));
     //TODO: add timer.
     for (unsigned int i = 0; i < nthreads; i++) {
