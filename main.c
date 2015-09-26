@@ -6,6 +6,7 @@
 #include <limits.h>
 #include <getopt.h>
 #include <stdint.h>
+#include <sys/time.h>
 #include <math.h>
 //#include <time.h>
 
@@ -250,7 +251,10 @@ int main(int argc, char **argv) {
     pthread_t *threads = malloc(nthreads * sizeof(pthread_t));
     local_terminate_flag = malloc(nthreads * sizeof(int));
     parm *args = malloc(nthreads * sizeof(parm));
-    //TODO: add timer.
+
+    struct timeval start, end;
+    gettimeofday(&start, NULL);
+
     for (unsigned int i = 0; i < nthreads; i++) {
         args[i].tid = i;
         pthread_create(&threads[i], NULL, calculate_gen, (void *) &args[i]);
@@ -260,7 +264,10 @@ int main(int argc, char **argv) {
     for (unsigned int i = 1; i < nthreads; i++) {
         pthread_join(threads[i], NULL);
     }
-    fprintf(stderr, "finished on generation %lu\n", (uintptr_t) final_gen);
+    gettimeofday(&end, NULL);
+    double elapsed = (end.tv_sec - start.tv_sec) +
+            ((end.tv_usec - start.tv_usec) / 1000000.0);
+    fprintf(stderr, "finished on generation %lu after %g sec\n", (uintptr_t) final_gen, elapsed);
     print_gen();
     return EXIT_SUCCESS;
 }
