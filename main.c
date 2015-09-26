@@ -42,8 +42,10 @@ void *calculate_gen(void *_args) {
     const unsigned int tid = args->tid;
     const node_id start = args->start;
     const node_id end = args->end;
-    // TODO: add #ifdef DEBUG to remove stderr prints
+
+    #ifdef DEBUG
     fprintf(stderr, "tid %u, start %u, end %u chunk %u\n", tid, start, end, end - start);
+    #endif
 
     // initialize for uniform distribution.
     // TODO: test make it global/shared between threads.
@@ -110,7 +112,6 @@ parm *split_work(int smart_split) {
         for (node_id i = 1; i < N; i++) {
             chunk += n_inbound[i] + 1;
             if (chunk > split) {
-                fprintf(stderr, "chunk=%f split=%f\n", chunk, split);
                 split -= (chunk - split) / (double) nthreads;
                 chunk = 0;
                 args[tid++].end = i;
@@ -172,9 +173,13 @@ int main(int argc, char **argv) {
         }
     }
 
+    #ifdef DEBUG
     fprintf(stderr, "opening file %s, operating with %u threads\n", filename, nthreads);
+    #endif
+
     read_from_file(filename);
     init_prob();
+
     fprintf(stderr, "Read %ux%u graph with:\n"
                     "\t%lu vertices\n"
                     "\t%u nodes without outbound links\n",
@@ -201,11 +206,11 @@ int main(int argc, char **argv) {
     gettimeofday(&end, NULL);
     double elapsed = (end.tv_sec - start.tv_sec) +
             ((end.tv_usec - start.tv_usec) / 1000000.0);
-    fprintf(stderr, "finished on generation %lu after %g sec\n", (uintptr_t) final_gen, elapsed);
+    printf("finished on generation %lu after %g sec\n", (uintptr_t) final_gen, elapsed);
     print_gen();
     prob_type sum = 0;
     for (node_id i = 0; i < N; i++) sum += P[i];
-    fprintf(stderr, "sum=%f\n", sum);
+    printf("sum=%f\n", sum);
 
     free(args);
     free(threads);

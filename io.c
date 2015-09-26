@@ -17,7 +17,9 @@ uint64_t n_vertices = 0;
 void read_from_file(const char *filename) {
     FILE *fp = fopen(filename, "r");
     if (fp == NULL) exit(E_FILE_ERROR);
+    #ifdef DEBUG
     fprintf(stderr, "opened %s\n", filename);
+    #endif
 
     char *line = NULL;
     size_t len = 0;
@@ -76,7 +78,7 @@ void print_gen(void) {
 }
 
 void print_usage(char **argv) {
-    fprintf(stderr, "usage: %s [options]\n\n"
+    printf("usage: %s [options]\n\n"
                     "    -h, --help: This help.\n"
                     "    -n, --nodesfile=FILENAME: File to use for input graph.\n"
                     "    -t, --nthreads=NUM: Number of threads used to run pagerank.\n"
