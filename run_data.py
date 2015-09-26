@@ -4,11 +4,11 @@ import time
 from subprocess import call
 from time import sleep
 
-call("mkdir time_results", shell=True)
-call("mkdir gen_results", shell=True)
+call("mkdir -p time_results", shell=True)
+call("mkdir -p gen_results", shell=True)
 
-call("rm time_results/*.txt", shell=True)
-call("rm gen_results/*.txt", shell=True)
+call("rm -f time_results/*.txt", shell=True)
+call("rm -f gen_results/*.txt", shell=True)
 
 nodefiles = os.listdir("nodeFiles")
 print(nodefiles)
