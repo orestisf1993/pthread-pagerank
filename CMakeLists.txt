@@ -28,6 +28,8 @@ if(UNIX)
     endif()
 endif()
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} $ENV{EXTRA_FLAGS}")
+
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -O0 -g -gdwarf-3 -DDEBUG")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} -O3")
 

@@ -10,6 +10,7 @@
 #include <math.h>
 //#include <time.h>
 
+#define MAX_GENERATIONS 10000
 #define DEFAULT_NTHREADS 4
 #define MILLION 1000000
 #define MAX_ERROR 0.000001f
@@ -35,6 +36,12 @@ typedef unsigned int node_id;
 typedef uint32_t node_id;
 #endif
 typedef node_id **graph;
+
+#ifdef USE_DOUBLE_PRECISION
+#define prob_type double
+#else
+#define prob_type float
+#endif
 
 void *calculate_gen(void *_args);
 void read_from_file(const char *filename);
@@ -103,29 +110,29 @@ void read_from_file(const char *filename) {
     N++;
 }
 
-float *P;
-float *E;
-float *P_new;
+prob_type *P;
+prob_type *E;
+prob_type *P_new;
 
 void init_prob(void) {
-    P = malloc(N * sizeof(float));
-    P_new = malloc(N * sizeof(float));
-    E = malloc(N * sizeof(float));
-//    float sumP = 0.0f;
-//    float sumE = 0.0f;
+    P = malloc(N * sizeof(prob_type));
+    P_new = malloc(N * sizeof(prob_type));
+    E = malloc(N * sizeof(prob_type));
+//    prob_type sumP = 0.0f;
+//    prob_type sumE = 0.0f;
 //    srand(time(NULL));
 //    for (node_id i = 0; i < N; i++){
 //        int r = rand();
-//        P[i] = (float)r/(float)(RAND_MAX);
+//        P[i] = (prob_type)r/(prob_type)(RAND_MAX);
 //        r = rand();
-//        E[i] = (float)r/(float)(RAND_MAX);
+//        E[i] = (prob_type)r/(prob_type)(RAND_MAX);
 //        sumP += P[i];
 //        sumE += E[i];
 //    }
     for (node_id i = 0; i < N; i++) {
 //        P[i] /= sumP;
 //        E[i] /= sumE;
-        P[i] = E[i] = 1 / (float) N;   // uniform distribution
+        P[i] = E[i] = 1 / (prob_type) N;   // uniform distribution
         // Any node with no out links is linked to all nodes to emulate the matlab script.
         if (!n_outbound[i]) {
             no_outbounds = realloc(no_outbounds, (++size_no_out) * sizeof(node_id));
@@ -153,12 +160,12 @@ void *calculate_gen(void *_args) {
 
     // initialize for uniform distribution.
     //TODO: test make it global/shared between threads.
-    float constant_add = (float) size_no_out / (float) (N) / (float) N;
+    prob_type constant_add = (prob_type) size_no_out / (prob_type) (N) / (prob_type) N;
     unsigned int gen;
-    for (gen = 0; ; gen++) {
+    for (gen = 0; gen < MAX_GENERATIONS ; gen++) {
         local_terminate_flag[tid] = 1;
         for (node_id i = start; i < end; i++) {
-            float link_prob = 0;
+            prob_type link_prob = 0;
             for (node_id x = 0; x < n_inbound[i]; x++) {
                 const node_id j = L[i][x];
                 link_prob += P[j] / n_outbound[j];
@@ -175,7 +182,7 @@ void *calculate_gen(void *_args) {
         const int res = pthread_barrier_wait(&barrier);
         if (res == PTHREAD_BARRIER_SERIAL_THREAD) {
             //swap P_new with P.
-            float *tmp;
+            prob_type *tmp;
             tmp = P;
             P = P_new;
             P_new = tmp;
@@ -190,15 +197,17 @@ void *calculate_gen(void *_args) {
         }
 
         pthread_barrier_wait(&barrier); //TODO: is this needed?
-        if (!running) pthread_exit(tid ? NULL : (void *) (uintptr_t) gen);
-        constant_add = 0.0f;
+        if (!running) break;
+
         // calculate the constant for links without outbound links.
+        constant_add = 0.0f;
         for (node_id x = 0; x < size_no_out; x++) {
             const node_id j = no_outbounds[x];
             constant_add += P[j];
         }
-        constant_add /= (float) N;
+        constant_add /= (prob_type) N;
     }
+    pthread_exit(tid ? NULL : (void *) (uintptr_t) gen);
 }
 
 void print_gen(void) {
@@ -273,7 +282,7 @@ int main(int argc, char **argv) {
             ((end.tv_usec - start.tv_usec) / 1000000.0);
     fprintf(stderr, "finished on generation %lu after %g sec\n", (uintptr_t) final_gen, elapsed);
     print_gen();
-    float sum = 0;
+    prob_type sum = 0;
     for (node_id i = 0; i < N; i++) sum += P[i];
     fprintf(stderr, "sum=%f\n", sum);
     return EXIT_SUCCESS;
