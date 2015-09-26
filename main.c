@@ -8,7 +8,6 @@
 #include <stdint.h>
 #include <sys/time.h>
 #include <math.h>
-//#include <time.h>
 
 #define MAX_GENERATIONS 10000
 #define DEFAULT_NTHREADS 4
@@ -18,9 +17,9 @@
 #define RESULTS_FILENAME "result.txt"
 
 #define max(a, b) \
-   ({ typeof (a) _a = (a); \
-       typeof (b) _b = (b); \
-     _a > _b ? _a : _b; })
+    ({ typeof(a) _a = (a); \
+    typeof(b) _b = (b); \
+    _a > _b ? _a : _b; })
 
 enum conf_errors {
     E_FILE_ERROR = 200,
@@ -32,7 +31,6 @@ enum conf_errors {
 #if UINT_MAX >= MILLION
 typedef unsigned int node_id;
 #else
-#include <stdint.h>
 typedef uint32_t node_id;
 #endif
 typedef node_id **graph;
@@ -63,7 +61,7 @@ node_id *no_outbounds = NULL;
 node_id N = 0;
 node_id size_no_out = 0;
 node_id size_no_in = 0;
-unsigned long int n_vertices = 0;
+uint64_t n_vertices = 0;
 
 unsigned int nthreads = DEFAULT_NTHREADS;
 
@@ -168,10 +166,10 @@ void *calculate_gen(void *_args) {
     fprintf(stderr, "tid %u, start %u, end %u chunk %u\n", tid, start, end, end - start);
 
     // initialize for uniform distribution.
-    //TODO: test make it global/shared between threads.
+    // TODO: test make it global/shared between threads.
     prob_type constant_add = (prob_type) size_no_out / (prob_type) (N) / (prob_type) N;
     unsigned int gen;
-    for (gen = 0; gen < MAX_GENERATIONS ; gen++) {
+    for (gen = 0; gen < MAX_GENERATIONS; gen++) {
         local_terminate_flag[tid] = 1;
         for (node_id i = start; i < end; i++) {
             prob_type link_prob = 0;
@@ -190,7 +188,7 @@ void *calculate_gen(void *_args) {
         }
         const int res = pthread_barrier_wait(&barrier);
         if (res == PTHREAD_BARRIER_SERIAL_THREAD) {
-            //swap P_new with P.
+            // swap P_new with P.
             prob_type *tmp;
             tmp = P;
             P = P_new;
@@ -205,7 +203,7 @@ void *calculate_gen(void *_args) {
             }
         }
 
-        pthread_barrier_wait(&barrier); //TODO: is this needed?
+        pthread_barrier_wait(&barrier);  // TODO: is this needed?
         if (!running) break;
 
         // calculate the constant for links without outbound links.
@@ -261,7 +259,9 @@ parm *split_work(int smart_split) {
             smart_split = 0;
             fprintf(stderr, "Failed to apply smart split, reverting to normal\n");
         }
-        else args[nthreads - 1].end = N;
+        else {
+            args[nthreads - 1].end = N;
+        }
     }
     if (!smart_split) {
         const node_id chunk = N / nthreads;
@@ -275,16 +275,15 @@ parm *split_work(int smart_split) {
 }
 
 int main(int argc, char **argv) {
-
     const char *filename = DEFAULT_NODES_FILENAME;
     int smart_split = 0;
 
     static struct option long_options[] = {
-            {"nodes-file", required_argument, 0, 'n'},
-            {"nthreads", required_argument, 0, 't'},
-            {"smart-split", no_argument, 0, 's'},
-            {"help", no_argument, 0, 'h'},
-            {0, 0, 0, 0}
+            {"nodes-file", required_argument, NULL, 'n'},
+            {"nthreads", required_argument, NULL, 't'},
+            {"smart-split", no_argument, NULL, 's'},
+            {"help", no_argument, NULL, 'h'},
+            {NULL, NULL, NULL, NULL}
     };
 
     while (1) {
