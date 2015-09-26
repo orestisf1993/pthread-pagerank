@@ -1,10 +1,16 @@
 cmake_minimum_required(VERSION 2.8)
-project(assignment_4)
+project(assignment_4 C)
 
 include(CheckCCompilerFlag)
-
-enable_language(C)
 find_package(Threads REQUIRED)
+
+if (CMAKE_VERSION VERSION_LESS "3.1")
+    if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
+        set (CMAKE_C_FLAGS "--std=gnu99 ${CMAKE_C_FLAGS}")
+    endif ()
+else ()
+    set (CMAKE_C_STANDARD 99)
+endif ()
 
 set(MY_C_FLAGS_LIST -Wextra -Wall -Wpointer-arith -Wformat -Wfloat-equal -Winit-self -Wcast-qual -Wwrite-strings -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wunreachable-code -Wbad-function-cast -Wstrict-overflow=5 -Winline -Wundef -Wnested-externs -Wlogical-op -Wformat=2 -Wredundant-decls)
 foreach(FLAG ${MY_C_FLAGS_LIST})
