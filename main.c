@@ -5,6 +5,7 @@
 #include <string.h>
 #include <limits.h>
 #include <getopt.h>
+#include <stdint.h>
 //#include <time.h>
 
 #define DEFAULT_NTHREADS 4
@@ -33,7 +34,6 @@ typedef uint32_t node_id;
 typedef node_id **graph;
 
 void *calculate_gen(void *_args);
-void print_nodes(node_id **array, node_id *sizes, node_id size);
 void read_from_file(const char *filename);
 void print_gen(void);
 void init_prob(void);
@@ -148,9 +148,9 @@ void *calculate_gen(void *_args) {
     // initialize for uniform distribution.
     //TODO: test make it global/shared between threads.
     float constant_add = (float) size_no_out / (float) (N) / (float) N;
-
+    unsigned int gen;
     //TODO: terminate after pagerank converges instead of constant number of iterations.
-    for (int gen = 0; gen < 10; gen++) {
+    for (gen = 0; gen < 10; gen++) {
         for (node_id i = start; i < end; i++) {
             float link_prob = 0;
             for (node_id x = 0; x < n_inbound[i]; x++) {
@@ -178,7 +178,7 @@ void *calculate_gen(void *_args) {
         constant_add /= (float) N;
         pthread_barrier_wait(&barrier); //TODO: is this needed?
     }
-    return NULL;
+    pthread_exit(args->tid ? NULL : (void *) (uintptr_t) gen);
 }
 
 void print_gen(void) {
@@ -239,9 +239,12 @@ int main(int argc, char **argv) {
         args[i].tid = i;
         pthread_create(&threads[i], NULL, calculate_gen, (void *) &args[i]);
     }
-    for (unsigned int i = 0; i < nthreads; i++) {
+    void *final_gen = NULL;
+    pthread_join(threads[0], &final_gen);
+    for (unsigned int i = 1; i < nthreads; i++) {
         pthread_join(threads[i], NULL);
     }
+    fprintf(stderr, "finished on generation %lu\n", (uintptr_t) final_gen);
     print_gen();
     return EXIT_SUCCESS;
 }
