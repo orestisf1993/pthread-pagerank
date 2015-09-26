@@ -154,7 +154,7 @@ void *calculate_gen(void *_args) {
     //TODO: test make it global/shared between threads.
     float constant_add = (float) size_no_out / (float) (N) / (float) N;
     unsigned int gen;
-    for (gen = 0; running; gen++) {
+    for (gen = 0; ; gen++) {
         local_terminate_flag[args->tid] = 1;
         for (node_id i = start; i < end; i++) {
             float link_prob = 0;
@@ -185,6 +185,8 @@ void *calculate_gen(void *_args) {
                 break;
             }
         }
+
+        pthread_barrier_wait(&barrier); //TODO: is this needed?
         if (!running) break; // exit serial thread without making the constant calculations.
         // calculate the constant for links without outbound links.
         for (node_id x = 0; x < size_no_out; x++) {
@@ -192,7 +194,6 @@ void *calculate_gen(void *_args) {
             constant_add += P[j];
         }
         constant_add /= (float) N;
-        pthread_barrier_wait(&barrier); //TODO: is this needed?
     }
     pthread_exit(args->tid ? NULL : (void *) (uintptr_t) gen);
 }
