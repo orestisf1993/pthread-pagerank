@@ -6,7 +6,6 @@
 #include <stdint.h>
 #include <sys/time.h>
 #include <math.h>
-#include <string.h>
 #include "utils.h"
 
 static unsigned int nthreads = DEFAULT_NTHREADS;
@@ -208,23 +207,16 @@ int main(int argc, char **argv) {
     double elapsed = (end.tv_sec - start.tv_sec) +
             ((end.tv_usec - start.tv_usec) / 1000000.0);
 
+    free(args);
+    free(threads);
+
     fprintf(stderr, "finished on generation %lu after %g sec\n", (uintptr_t) final_gen, elapsed);
     save_res(N , nthreads, (uintptr_t) final_gen,  elapsed);
-
-    char size[15];
-    sprintf(size,"%d_%d",N,nthreads);
-    char* filename_result = malloc(strlen(size)+strlen("_results.txt")+1);
-    strcpy(filename_result,size);
-    strcat(filename_result,"_results.txt");
-    print_gen(filename_result);
-
+    print_gen(nthreads);
 
     prob_type sum = 0.0;
     for (node_id i = 0; i < N; i++) sum += P[i];
     printf("sum=%f\n", sum);
-
-    free(args);
-    free(threads);
 
     return EXIT_SUCCESS;
 }

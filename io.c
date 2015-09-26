@@ -70,10 +70,18 @@ void read_from_file(const char *filename) {
     N++;
 }
 
-void print_gen(char * filename) {
+void print_gen(unsigned int nthreads) {
+    char size[15];
+    sprintf(size, "%d_%d", N, nthreads);
+    char *filename = malloc(strlen(size) + strlen("_results.txt") + 1);
+    strcpy(filename, size);
+    strcat(filename, "_results.txt");
+
     FILE *fp = fopen(filename, "w");
     for (node_id i = 0; i < N; i++) fprintf(fp, "%f ", P[i]);
     fprintf(fp, "\n");
+
+    free(filename);
     fclose(fp);
 }
 
@@ -86,8 +94,8 @@ void print_usage(char **argv) {
             argv[0]);
 }
 
-void save_res(int size ,int threads,uintptr_t final_gen, double time) {
+void save_res(int size, int threads, uintptr_t final_gen, double time) {
     FILE *fp = fopen(RESULTS_FILENAME, "a");  // Append the time results in the end
-    fprintf(fp, "\n %d %d %lu %g",size,threads,final_gen,time);
+    fprintf(fp, "%d %d %lu %g\n", size, threads, final_gen, time);
     fclose(fp);
 }
