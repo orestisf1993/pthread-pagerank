@@ -100,16 +100,6 @@ void read_from_file(const char *filename) {
     N++;
 }
 
-void print_nodes(node_id **array, node_id *sizes, node_id size) {
-    for (unsigned int i = 0; i < size; i++) {
-        printf("%u<- ", i);
-        for (unsigned int j = 0; j < sizes[i]; j++) {
-            printf("%u ", array[i][j]);
-        }
-        printf("\n%u incoming %u outbound\n", n_inbound[i], n_outbound[i]);
-    }
-}
-
 float *P;
 float *E;
 float *P_new;
@@ -226,15 +216,14 @@ int main(int argc, char **argv) {
 
     fprintf(stderr, "opening file %s, operating with %u threads\n", filename, nthreads);
     read_from_file(filename);
-    print_nodes(L, n_inbound, N);
     init_prob();
 
     fprintf(stderr, "Read %ux%u graph\n", N, N);
     pthread_barrier_init(&barrier, NULL, nthreads);
-    print_gen();
 
     pthread_t *threads = malloc(nthreads * sizeof(pthread_t));
     parm *args = malloc(nthreads * sizeof(parm));
+    //TODO: add timer.
     for (unsigned int i = 0; i < nthreads; i++) {
         args[i].tid = i;
         pthread_create(&threads[i], NULL, calculate_gen, (void *) &args[i]);
