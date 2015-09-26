@@ -4,8 +4,8 @@ f = fopen(filename,'r');
 
 A = fscanf(f, '%d %d\n', [2 Inf]);
 A = A';
-x = A(:,1) + 1;
-y = A(:,2) + 1;
+x = A(:,2) + 1;
+y = A(:,1) + 1;
 size = max(max(x),max(y));
 G = sparse(x, y, true, size, size);
 
