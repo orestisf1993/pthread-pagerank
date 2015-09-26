@@ -2,126 +2,17 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <stdlib.h>
-#include <string.h>
-#include <limits.h>
 #include <getopt.h>
 #include <stdint.h>
 #include <sys/time.h>
 #include <math.h>
+#include "utils.h"
 
-#define MAX_GENERATIONS 10000
-#define DEFAULT_NTHREADS 4
-#define MILLION 1000000
-#define MAX_ERROR 0.000001f
-#define DEFAULT_NODES_FILENAME "nodes.txt"
-#define RESULTS_FILENAME "result.txt"
-
-#define max(a, b) \
-    ({ typeof(a) _a = (a); \
-    typeof(b) _b = (b); \
-    _a > _b ? _a : _b; })
-
-enum conf_errors {
-    E_FILE_ERROR = 200,
-    E_MALLOC_ERROR,
-    E_UNRECOGNISED_ARGUMENT
-};
-
-// must fit 10^6 elements
-#if UINT_MAX >= MILLION
-typedef unsigned int node_id;
-#else
-typedef uint32_t node_id;
-#endif
-typedef node_id **graph;
-
-#ifdef USE_DOUBLE_PRECISION
-#define prob_type double
-#else
-#define prob_type float
-#endif
-
-typedef struct {
-    unsigned int tid;
-    node_id start;
-    node_id end;
-} parm;
-
-void *calculate_gen(void *_args);
-void read_from_file(const char *filename);
-void print_gen(void);
-void init_prob(void);
-void print_usage(char **argv);
-parm *split_work(int smart_split);
-
-graph L = NULL;
-node_id *n_inbound = NULL;
-node_id *n_outbound = NULL;
-node_id *no_outbounds = NULL;
-node_id N = 0;
-node_id size_no_out = 0;
-node_id size_no_in = 0;
-uint64_t n_vertices = 0;
-
-unsigned int nthreads = DEFAULT_NTHREADS;
-
-void read_from_file(const char *filename) {
-    FILE *fp = fopen(filename, "r");
-    if (fp == NULL) exit(E_FILE_ERROR);
-    fprintf(stderr, "opened %s\n", filename);
-
-    char *line = NULL;
-    size_t len = 0;
-    // must initialize first element because idx = 0 is never larger than N.
-    L = malloc(sizeof(*L));
-    n_inbound = malloc(sizeof(node_id));
-    n_outbound = malloc(sizeof(node_id));
-    L[0] = NULL;
-    n_inbound[0] = 0;
-    n_outbound[0] = 0;
-
-    while (getline(&line, &len, fp) != -1) {
-        // skip comments in nodes file.
-        if (line[0] == '#') continue;
-        // assuming that the first token is the node index
-        char *token = strtok(line, "\t ");
-        node_id target = (unsigned int) atol(token);
-        // assuming one pair for each line
-        token = strtok(NULL, "\t ");
-        node_id idx = (unsigned int) atol(token);
-
-        node_id biggest = max(idx, target);
-        if (biggest > N) {
-            L = realloc(L, (biggest + 1) * sizeof(*L));
-            n_inbound = realloc(n_inbound, (biggest + 1) * sizeof(*n_inbound));
-            n_outbound = realloc(n_outbound, (biggest + 1) * sizeof(*n_outbound));
-            if (L == NULL || n_inbound == NULL) exit(E_MALLOC_ERROR);
-
-            for (node_id i = N + 1; i <= biggest; i++) {
-                // initialize new array elements
-                L[i] = NULL;
-                n_inbound[i] = 0;
-                n_outbound[i] = 0;
-            }
-            N = biggest;
-        }
-        n_inbound[idx]++;
-        n_outbound[target]++;
-        L[idx] = realloc(L[idx], (n_inbound[idx]) * sizeof(node_id));
-        if (L[idx] == NULL) exit(E_MALLOC_ERROR);
-
-        L[idx][n_inbound[idx] - 1] = target;
-        n_vertices++;
-    }
-
-    fclose(fp);
-    free(line);
-    N++;
-}
+static unsigned int nthreads = DEFAULT_NTHREADS;
 
 prob_type *P;
-prob_type *E;
-prob_type *P_new;
+static prob_type *E;
+static prob_type *P_new;
 
 void init_prob(void) {
     P = malloc(N * sizeof(prob_type));
@@ -215,22 +106,6 @@ void *calculate_gen(void *_args) {
         constant_add /= (prob_type) N;
     }
     pthread_exit(tid ? NULL : (void *) (uintptr_t) gen);
-}
-
-void print_gen(void) {
-    FILE *fp = fopen(RESULTS_FILENAME, "w");
-    for (node_id i = 0; i < N; i++) fprintf(fp, "%f ", P[i]);
-    fprintf(fp, "\n");
-    fclose(fp);
-}
-
-void print_usage(char **argv) {
-    fprintf(stderr, "usage: %s [options]\n\n"
-                    "    -h, --help: This help.\n"
-                    "    -n, --nodesfile=FILENAME: File to use for input graph.\n"
-                    "    -t, --nthreads=NUM: Number of threads used to run pagerank.\n"
-                    "    -s, --smart-split: Split work between threads based on workload, not nodes.\n",
-            argv[0]);
 }
 
 parm *split_work(int smart_split) {
