@@ -42,10 +42,10 @@ void init_prob(void) {
     }
 }
 
-pthread_barrier_t barrier;
+static pthread_barrier_t barrier;
 
-int running = 1;
-int *local_terminate_flag;
+static int running = 1;
+static int *local_terminate_flag;
 
 #define D 0.85f
 void *calculate_gen(void *_args) {
