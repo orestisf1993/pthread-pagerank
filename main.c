@@ -43,11 +43,18 @@ typedef node_id **graph;
 #define prob_type float
 #endif
 
+typedef struct {
+    unsigned int tid;
+    node_id start;
+    node_id end;
+} parm;
+
 void *calculate_gen(void *_args);
 void read_from_file(const char *filename);
 void print_gen(void);
 void init_prob(void);
 void print_usage(char **argv);
+parm *split_work(int smart_split);
 
 graph L = NULL;
 node_id *n_inbound = NULL;
@@ -55,6 +62,8 @@ node_id *n_outbound = NULL;
 node_id *no_outbounds = NULL;
 node_id N = 0;
 node_id size_no_out = 0;
+node_id size_no_in = 0;
+unsigned long int n_vertices = 0;
 
 unsigned int nthreads = DEFAULT_NTHREADS;
 
@@ -104,6 +113,7 @@ void read_from_file(const char *filename) {
         if (L[idx] == NULL) exit(E_MALLOC_ERROR);
 
         L[idx][n_inbound[idx] - 1] = target;
+        n_vertices++;
     }
 
     fclose(fp);
@@ -138,13 +148,11 @@ void init_prob(void) {
             no_outbounds = realloc(no_outbounds, (++size_no_out) * sizeof(node_id));
             no_outbounds[size_no_out - 1] = i;
         }
+        if (!n_inbound[i]) size_no_in++;
     }
 }
 
 pthread_barrier_t barrier;
-typedef struct {
-    unsigned int tid;
-} parm;
 
 int running = 1;
 int *local_terminate_flag;
@@ -152,11 +160,11 @@ int *local_terminate_flag;
 #define D 0.85f
 void *calculate_gen(void *_args) {
     const parm *args = (parm *) _args;
-    const node_id chunk = N / nthreads;
     const unsigned int tid = args->tid;
-    const node_id start = (node_id) (tid) * chunk;
-    const node_id end = start + chunk + (tid == nthreads - 1) * (N % nthreads);
-    fprintf(stderr, "tid %u, start %u, end %u\n", tid, start, end);
+    const node_id start = args->start;
+    const node_id end = args->end;
+    // TODO: add #ifdef DEBUG to remove stderr prints
+    fprintf(stderr, "tid %u, start %u, end %u chunk %u\n", tid, start, end, end - start);
 
     // initialize for uniform distribution.
     //TODO: test make it global/shared between threads.
@@ -219,24 +227,67 @@ void print_gen(void) {
 
 void print_usage(char **argv) {
     fprintf(stderr, "usage: %s [options]\n\n"
+                    "    -h, --help: This help.\n"
                     "    -n, --nodesfile=FILENAME: File to use for input graph.\n"
-                    "    -t, --nthreads=NUM: Number of threads used to run pagerank.\n",
+                    "    -t, --nthreads=NUM: Number of threads used to run pagerank.\n"
+                    "    -s, --smart-split: Split work between threads based on workload, not nodes.\n",
             argv[0]);
+}
+
+parm *split_work(int smart_split) {
+    parm *args = malloc(nthreads * sizeof(parm));
+
+    if (smart_split) {
+        // split work evenly.
+        unsigned int tid = 0;
+        double split = (double) (n_vertices + size_no_in) / (double) nthreads;
+        double chunk = n_inbound[0] + 1;
+        args[0].start = 0;
+        args[0].tid = 0;
+        for (node_id i = 1; i < N; i++) {
+            chunk += n_inbound[i] + 1;
+            if (chunk > split) {
+                fprintf(stderr, "chunk=%f split=%f\n", chunk, split);
+                split -= (chunk - split) / (double) nthreads;
+                chunk = 0;
+                args[tid++].end = i;
+                args[tid].start = i;
+                args[tid].tid = tid;
+                if (tid == nthreads - 1) break;
+            }
+        }
+        if (tid != nthreads - 1) {
+            smart_split = 0;
+            fprintf(stderr, "Failed to apply smart split, reverting to normal\n");
+        }
+        else args[nthreads - 1].end = N;
+    }
+    if (!smart_split) {
+        const node_id chunk = N / nthreads;
+        for (unsigned int tid = 0; tid < nthreads; tid++) {
+            args[tid].tid = tid;
+            args[tid].start = (node_id) (tid) * chunk;
+            args[tid].end = args[tid].start + chunk + (tid == nthreads - 1) * (N % nthreads);
+        }
+    }
+    return args;
 }
 
 int main(int argc, char **argv) {
 
     const char *filename = DEFAULT_NODES_FILENAME;
+    int smart_split = 0;
 
     static struct option long_options[] = {
             {"nodes-file", required_argument, 0, 'n'},
             {"nthreads", required_argument, 0, 't'},
+            {"smart-split", no_argument, 0, 's'},
             {"help", no_argument, 0, 'h'},
             {0, 0, 0, 0}
     };
 
     while (1) {
-        int opt = getopt_long(argc, argv, "n:t:h", long_options, NULL);
+        int opt = getopt_long(argc, argv, "n:t:hs", long_options, NULL);
         if (opt == -1) break;
         switch (opt) {
             case 'n':
@@ -248,6 +299,9 @@ int main(int argc, char **argv) {
             case 'h':
                 print_usage(argv);
                 exit(EXIT_SUCCESS);
+            case 's':
+                smart_split = 1;
+                break;
             default:
                 print_usage(argv);
                 exit(E_UNRECOGNISED_ARGUMENT);
@@ -257,13 +311,16 @@ int main(int argc, char **argv) {
     fprintf(stderr, "opening file %s, operating with %u threads\n", filename, nthreads);
     read_from_file(filename);
     init_prob();
+    fprintf(stderr, "Read %ux%u graph with:\n"
+                    "\t%lu vertices\n"
+                    "\t%u nodes without outbound links\n",
+            N, N, n_vertices, size_no_out);
 
-    fprintf(stderr, "Read %ux%u graph\n", N, N);
     pthread_barrier_init(&barrier, NULL, nthreads);
-
     pthread_t *threads = malloc(nthreads * sizeof(pthread_t));
     local_terminate_flag = malloc(nthreads * sizeof(int));
-    parm *args = malloc(nthreads * sizeof(parm));
+
+    parm *args = split_work(smart_split);
 
     struct timeval start, end;
     gettimeofday(&start, NULL);
