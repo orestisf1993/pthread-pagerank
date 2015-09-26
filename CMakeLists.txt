@@ -1,14 +1,29 @@
-cmake_minimum_required(VERSION 3.3)
+cmake_minimum_required(VERSION 2.8)
 project(assignment_4)
 
-find_package(Threads)
+include(CheckCCompilerFlag)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra -Wall -Wpointer-arith -Wformat -Wfloat-equal -Winit-self \
--Wcast-qual -Wwrite-strings -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wundef \
--Wunreachable-code -Wbad-function-cast -Wstrict-overflow=5 -Winline -Wundef -Wnested-externs \
--Wlogical-op -Wformat=2 -Wredundant-decls -m64")
+enable_language(C)
+find_package(Threads REQUIRED)
 
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -O0 -g -gdwarf-3")
+set(MY_C_FLAGS_LIST -Wextra -Wall -Wpointer-arith -Wformat -Wfloat-equal -Winit-self -Wcast-qual -Wwrite-strings -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wunreachable-code -Wbad-function-cast -Wstrict-overflow=5 -Winline -Wundef -Wnested-externs -Wlogical-op -Wformat=2 -Wredundant-decls)
+foreach(FLAG ${MY_C_FLAGS_LIST})
+    check_c_compiler_flag(${FLAG} HAS_${FLAG})
+    if (HAS_${FLAG})
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${FLAG}")
+    endif()
+endforeach()
+
+if(UNIX)
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64")
+    else()
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32")
+    endif()
+endif()
+
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -O0 -g -gdwarf-3 -DDEBUG")
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} -O3")
 
 set(SOURCE_FILES main.c)
 add_executable(assignment_4 ${SOURCE_FILES} main.c)
