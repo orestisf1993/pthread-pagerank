@@ -15,7 +15,7 @@
 #define MILLION 1000000
 #define MAX_ERROR 0.000001f
 #define DEFAULT_NODES_FILENAME "nodes.txt"
-#define RESULTS_FILENAME "result.txt"
+#define RESULTS_FILENAME "time_results.txt"
 
 #define max(a, b) \
    ({ typeof (a) _a = (a); \
@@ -51,7 +51,8 @@ typedef struct {
 
 void *calculate_gen(void *_args);
 void read_from_file(const char *filename);
-void print_gen(void);
+void print_gen(char* filename);
+void save_res(int size ,int threads,int final_gen, double time);
 void init_prob(void);
 void print_usage(char **argv);
 parm *split_work(int smart_split);
@@ -219,12 +220,19 @@ void *calculate_gen(void *_args) {
     pthread_exit(tid ? NULL : (void *) (uintptr_t) gen);
 }
 
-void print_gen(void) {
-    FILE *fp = fopen(RESULTS_FILENAME, "w");
+void print_gen(char * filename) {
+    FILE *fp = fopen(filename, "w");
     for (node_id i = 0; i < N; i++) fprintf(fp, "%f ", P[i]);
     fprintf(fp, "\n");
     fclose(fp);
 }
+
+void save_res(int size ,int threads,int final_gen, double time) {
+    FILE *fp = fopen(RESULTS_FILENAME, "a");//Append the time results in the end
+    fprintf(fp, "\n %d %d %d %g",size,threads,final_gen,time);
+    fclose(fp);
+}
+
 
 void print_usage(char **argv) {
     fprintf(stderr, "usage: %s [options]\n\n"
@@ -338,9 +346,20 @@ int main(int argc, char **argv) {
     gettimeofday(&end, NULL);
     double elapsed = (end.tv_sec - start.tv_sec) +
             ((end.tv_usec - start.tv_usec) / 1000000.0);
-    fprintf(stderr, "finished on generation %lu after %g sec\n", (uintptr_t) final_gen, elapsed);
-    print_gen();
-    prob_type sum = 0;
+
+    fprintf(stderr, "finished on generation %u after %g sec\n", (uintptr_t) final_gen, elapsed);
+    //prob_type sum = 0;
+    save_res( N , nthreads,(int) final_gen,  elapsed);
+
+    char size[15];
+    sprintf(size,"%d_%d",N,nthreads);
+    char* filename_result = malloc(strlen(size)+strlen("_results.txt")+1);
+    strcpy(filename_result,size);
+    strcat(filename_result,"_results.txt");
+    print_gen(filename_result);
+
+
+    float sum = 0;
     for (node_id i = 0; i < N; i++) sum += P[i];
     fprintf(stderr, "sum=%f\n", sum);
 
