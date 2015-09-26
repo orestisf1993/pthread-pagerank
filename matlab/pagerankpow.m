@@ -20,11 +20,11 @@ end
 p = .85;
 delta = (1-p)/n;
 x = ones(n,1)/n;
-z = zeros(n,1);
+z = x+0.1;
 cnt = 0;
 % This condition is never satisfied for big G (eg 1M x 1M).
 % True if final iteration had a minimal effect on  the values of the p vector
-while max(abs(x-z)) > .0001 
+while any(abs(x-z) > 0.000001) 
    z = x;
    x = zeros(n,1);
    for j = 1:n
