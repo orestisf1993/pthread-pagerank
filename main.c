@@ -35,6 +35,8 @@ static pthread_barrier_t barrier;
 
 static int running = 1;
 static int *local_terminate_flag;
+// initialize for uniform distribution.
+static prob_type constant_add;
 
 #define D 0.85f
 void *calculate_gen(void *_args) {
@@ -47,9 +49,6 @@ void *calculate_gen(void *_args) {
     fprintf(stderr, "tid %u, start %u, end %u chunk %u\n", tid, start, end, end - start);
     #endif
 
-    // initialize for uniform distribution.
-    // TODO: test make it global/shared between threads.
-    prob_type constant_add = (prob_type) size_no_out / (prob_type) (N) / (prob_type) N;
     unsigned int gen;
     for (gen = 0; gen < MAX_GENERATIONS; gen++) {
         local_terminate_flag[tid] = 1;
@@ -83,18 +82,19 @@ void *calculate_gen(void *_args) {
                     break;
                 }
             }
+            if (running) {
+                // calculate the constant for links without outbound links.
+                constant_add = 0.0f;
+                for (node_id x = 0; x < size_no_out; x++) {
+                    const node_id j = no_outbounds[x];
+                    constant_add += P[j];
+                }
+                constant_add /= (prob_type) N;
+            }
         }
 
-        pthread_barrier_wait(&barrier);  // TODO: is this needed?
+        pthread_barrier_wait(&barrier);
         if (!running) break;
-
-        // calculate the constant for links without outbound links.
-        constant_add = 0.0f;
-        for (node_id x = 0; x < size_no_out; x++) {
-            const node_id j = no_outbounds[x];
-            constant_add += P[j];
-        }
-        constant_add /= (prob_type) N;
     }
     pthread_exit(tid ? NULL : (void *) (uintptr_t) gen);
 }
@@ -190,6 +190,7 @@ int main(int argc, char **argv) {
     local_terminate_flag = malloc(nthreads * sizeof(int));
 
     parm *args = split_work(smart_split);
+    constant_add = (prob_type) size_no_out / (prob_type) (N) / (prob_type) N;
 
     struct timeval start, end;
     gettimeofday(&start, NULL);
