@@ -18,21 +18,10 @@ void init_prob(void) {
     P = malloc(N * sizeof(prob_type));
     P_new = malloc(N * sizeof(prob_type));
     E = malloc(N * sizeof(prob_type));
-//    prob_type sumP = 0.0f;
-//    prob_type sumE = 0.0f;
-//    srand(time(NULL));
-//    for (node_id i = 0; i < N; i++){
-//        int r = rand();
-//        P[i] = (prob_type)r/(prob_type)(RAND_MAX);
-//        r = rand();
-//        E[i] = (prob_type)r/(prob_type)(RAND_MAX);
-//        sumP += P[i];
-//        sumE += E[i];
-//    }
+
     for (node_id i = 0; i < N; i++) {
-//        P[i] /= sumP;
-//        E[i] /= sumE;
         P[i] = E[i] = 1 / (prob_type) N;   // uniform distribution
+
         // Any node with no out links is linked to all nodes to emulate the matlab script.
         if (!n_outbound[i]) {
             no_outbounds = realloc(no_outbounds, (++size_no_out) * sizeof(node_id));
