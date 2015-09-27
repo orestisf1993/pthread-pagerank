@@ -93,8 +93,8 @@ void print_usage(char **argv) {
             argv[0]);
 }
 
-void save_res(int size, int threads, uintptr_t final_gen, double time) {
+void save_res(int size, int threads, unsigned int final_gen, double time) {
     FILE *fp = fopen(RESULTS_FILENAME, "a");  // Append the time results in the end
-    fprintf(fp, "%d %d %lu %g\n", size, threads, final_gen, time);
+    fprintf(fp, "%d %d %u %g\n", size, threads, final_gen, time);
     fclose(fp);
 }

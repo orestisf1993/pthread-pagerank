@@ -216,7 +216,7 @@ int main(int argc, char **argv) {
             "finished on generation %u after %g sec\n",
             *(unsigned int *) final_gen,
             elapsed);
-    save_res(N , nthreads, (uintptr_t) final_gen,  elapsed);
+    save_res(N, nthreads, *(unsigned int *) final_gen, elapsed);
     print_gen(nthreads);
 
     prob_type sum = 0.0;

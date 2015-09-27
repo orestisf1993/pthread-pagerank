@@ -46,7 +46,7 @@ void read_from_file(const char *filename);
 void print_gen(unsigned int nthreads);
 void init_prob(void);
 void print_usage(char **argv);
-void save_res(int size ,int threads,uintptr_t final_gen, double time);
+void save_res(int size, int threads, unsigned int final_gen, double time);
 parm *split_work(int smart_split);
 
 extern graph L;
