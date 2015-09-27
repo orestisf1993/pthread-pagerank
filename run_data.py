@@ -16,7 +16,7 @@ threads = [1, 2, 3, 4]
 for file in nodefiles:
     for thread in threads:
         filename = "nodeFiles/" + file
-        command = "./bin/assignment_4 -n " + filename + " -t " + str(thread)
+        command = "./bin/assignment_4 -n '" + filename + "' -t " + str(thread)
         call(command, shell=True)
 
 call("mv time_results.txt time_results/", shell=True)
