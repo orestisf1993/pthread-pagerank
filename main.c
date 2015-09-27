@@ -148,7 +148,7 @@ int main(int argc, char **argv) {
             {"nthreads", required_argument, NULL, 't'},
             {"smart-split", no_argument, NULL, 's'},
             {"help", no_argument, NULL, 'h'},
-            {NULL, NULL, NULL, NULL}
+            {NULL, 0, NULL, 0}
     };
 
     while (1) {
@@ -181,7 +181,7 @@ int main(int argc, char **argv) {
     init_prob();
 
     fprintf(stderr, "Read %ux%u graph with:\n"
-                    "\t%lu vertices\n"
+                    "\t%llu vertices\n"
                     "\t%u nodes without outbound links\n",
             N, N, n_vertices, size_no_out);
 
@@ -211,7 +211,7 @@ int main(int argc, char **argv) {
     free(args);
     free(threads);
 
-    fprintf(stderr, "finished on generation %lu after %g sec\n", (uintptr_t) final_gen, elapsed);
+    fprintf(stderr, "finished on generation %u after %g sec\n", (uintptr_t) final_gen, elapsed);
     save_res(N , nthreads, (uintptr_t) final_gen,  elapsed);
     print_gen(nthreads);
 
