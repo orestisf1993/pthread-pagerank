@@ -1,9 +1,10 @@
 #define _GNU_SOURCE
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <stdio.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <getopt.h>
-#include <stdint.h>
 #include <sys/time.h>
 #include <math.h>
 #include "utils.h"
@@ -181,7 +182,7 @@ int main(int argc, char **argv) {
     init_prob();
 
     fprintf(stderr, "Read %ux%u graph with:\n"
-                    "\t%llu vertices\n"
+                    "\t%"PRIu64" vertices\n"
                     "\t%u nodes without outbound links\n",
             N, N, n_vertices, size_no_out);
 
@@ -211,7 +212,10 @@ int main(int argc, char **argv) {
     free(args);
     free(threads);
 
-    fprintf(stderr, "finished on generation %u after %g sec\n", (uintptr_t) final_gen, elapsed);
+    fprintf(stderr,
+            "finished on generation %u after %g sec\n",
+            *(unsigned int *) final_gen,
+            elapsed);
     save_res(N , nthreads, (uintptr_t) final_gen,  elapsed);
     print_gen(nthreads);
 

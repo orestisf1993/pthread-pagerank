@@ -60,4 +60,4 @@ extern uint64_t n_vertices;
 
 extern prob_type *P;
 
-#endif //ASSIGNMENT_4_UTILS_H
+#endif // ASSIGNMENT_4_UTILS_H
