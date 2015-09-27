@@ -7,37 +7,27 @@
 #include <getopt.h>
 #include <sys/time.h>
 #include <math.h>
+#include <stdbool.h>
 #include "utils.h"
 
 static unsigned int nthreads = DEFAULT_NTHREADS;
-
-prob_type *P;
-static prob_type *E;
-static prob_type *P_new;
-
-void init_prob(void) {
-    P = malloc(N * sizeof(prob_type));
-    P_new = malloc(N * sizeof(prob_type));
-    E = malloc(N * sizeof(prob_type));
-
-    for (node_id i = 0; i < N; i++) {
-        P[i] = E[i] = 1 / (prob_type) N;   // uniform distribution
-
-        // Any node with no out links is linked to all nodes to emulate the matlab script.
-        if (!n_outbound[i]) {
-            no_outbounds = realloc(no_outbounds, (++size_no_out) * sizeof(node_id));
-            no_outbounds[size_no_out - 1] = i;
-        }
-        if (!n_inbound[i]) size_no_in++;
-    }
-}
 
 static pthread_barrier_t barrier;
 
 static int running = 1;
 static int *local_terminate_flag;
 // initialize for uniform distribution.
-static prob_type constant_add;
+
+float calculate_const_add(void) {
+    // calculate the constant for links without outbound links.
+    float res = 0.0f;
+    for (node_id x = 0; x < size_no_out; x++) {
+        const node_id j = no_outbounds[x];
+        res += P[j];
+    }
+    res /= (prob_type) N;
+    return res;
+}
 
 #define D 0.85f
 void *calculate_gen(void *_args) {
@@ -84,13 +74,7 @@ void *calculate_gen(void *_args) {
                 }
             }
             if (running) {
-                // calculate the constant for links without outbound links.
-                constant_add = 0.0f;
-                for (node_id x = 0; x < size_no_out; x++) {
-                    const node_id j = no_outbounds[x];
-                    constant_add += P[j];
-                }
-                constant_add /= (prob_type) N;
+                constant_add = calculate_const_add();
             }
         }
 
@@ -150,18 +134,22 @@ parm *split_work(int smart_split) {
 
 int main(int argc, char **argv) {
     const char *filename = DEFAULT_NODES_FILENAME;
-    int smart_split = 0;
+    bool smart_split = false;
+    char *custom_F = NULL;
+    char *custom_E = NULL;
 
     static struct option long_options[] = {
             {"nodes-file", required_argument, NULL, 'n'},
             {"nthreads", required_argument, NULL, 't'},
+            {"custom-f", required_argument, NULL, 'f'},
+            {"custom-e", required_argument, NULL, 'e'},
             {"smart-split", no_argument, NULL, 's'},
             {"help", no_argument, NULL, 'h'},
             {NULL, 0, NULL, 0}
     };
 
     while (1) {
-        int opt = getopt_long(argc, argv, "n:t:hs", long_options, NULL);
+        int opt = getopt_long(argc, argv, "n:t:hsf:e:", long_options, NULL);
         if (opt == -1) break;
         switch (opt) {
             case 'n':
@@ -174,7 +162,13 @@ int main(int argc, char **argv) {
                 print_usage(argv);
                 exit(EXIT_SUCCESS);
             case 's':
-                smart_split = 1;
+                smart_split = true;
+                break;
+            case 'f':
+                custom_F = optarg;
+                break;
+            case 'e':
+                custom_E = optarg;
                 break;
             default:
                 print_usage(argv);
@@ -187,7 +181,7 @@ int main(int argc, char **argv) {
     #endif
 
     read_from_file(filename);
-    init_prob();
+    init_prob(custom_F, custom_E);
 
     fprintf(stderr, "Read %ux%u graph with:\n"
                     "\t%"PRIu64" vertices\n"
@@ -199,7 +193,6 @@ int main(int argc, char **argv) {
     local_terminate_flag = malloc(nthreads * sizeof(int));
 
     parm *args = split_work(smart_split);
-    constant_add = (prob_type) size_no_out / (prob_type) (N) / (prob_type) N;
 
     struct timeval start, end;
     gettimeofday(&start, NULL);

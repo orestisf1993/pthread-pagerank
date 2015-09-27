@@ -78,7 +78,8 @@ void print_gen(unsigned int nthreads) {
     strcat(filename, "_results.bin");
 
     FILE *fp = fopen(filename, "wb");
-    fwrite(P, sizeof(float), N, fp);
+    if (fp == NULL) exit(E_FILE_ERROR);
+    fwrite(P, sizeof(prob_type), N, fp);
 
     free(filename);
     fclose(fp);
@@ -87,14 +88,60 @@ void print_gen(unsigned int nthreads) {
 void print_usage(char **argv) {
     printf("usage: %s [options]\n\n"
                     "    -h, --help: This help.\n"
-                    "    -n, --nodesfile=FILENAME: File to use for input graph.\n"
+                   "    -n, --nodes-file=FILENAME: File to use for input graph. Default is nodes.txt\n"
                     "    -t, --nthreads=NUM: Number of threads used to run pagerank.\n"
+                   "    -f, --custom-f: Binary file to use for initial P. Default is uniform distribution.\n"
+                   "    -e, --custom-e: Binary file to use for initial E. Default is uniform distribution.\n"
                     "    -s, --smart-split: Split work between threads based on workload, not nodes.\n",
             argv[0]);
 }
 
 void save_res(int size, int threads, unsigned int final_gen, double time) {
     FILE *fp = fopen(RESULTS_FILENAME, "a");  // Append the time results in the end
+    if (fp == NULL) exit(E_FILE_ERROR);
     fprintf(fp, "%d %d %u %g\n", size, threads, final_gen, time);
     fclose(fp);
+}
+
+prob_type *P;
+prob_type *E;
+prob_type *P_new;
+prob_type constant_add;
+
+void init_prob(char *custom_F, char *custom_E) {
+    P = malloc(N * sizeof(prob_type));
+    P_new = malloc(N * sizeof(prob_type));
+    E = malloc(N * sizeof(prob_type));
+
+    if (custom_F != NULL) {
+        FILE *fp = fopen(custom_F, "r");
+        if (fp == NULL) exit(E_FILE_ERROR);
+        fseek(fp, SEEK_SET, 0);
+        fread(P, sizeof(prob_type), N, fp);
+        fclose(fp);
+    }
+    if (custom_E != NULL) {
+        FILE *fp = fopen(custom_E, "r");
+        if (fp == NULL) exit(E_FILE_ERROR);
+        fseek(fp, SEEK_SET, 0);
+        fread(E, sizeof(prob_type), N, fp);
+        fclose(fp);
+        constant_add = calculate_const_add();
+    }
+    else {
+        constant_add = (prob_type) size_no_out / (prob_type) (N) / (prob_type) N;
+    }
+
+    for (node_id i = 0; i < N; i++) {
+        // uniform distribution
+        if (custom_F == NULL) P[i] = 1 / (prob_type) N;
+        if (custom_E == NULL) E[i] = 1 / (prob_type) N;
+
+        // Any node with no out links is linked to all nodes to emulate the matlab script.
+        if (!n_outbound[i]) {
+            no_outbounds = realloc(no_outbounds, (++size_no_out) * sizeof(node_id));
+            no_outbounds[size_no_out - 1] = i;
+        }
+        if (!n_inbound[i]) size_no_in++;
+    }
 }

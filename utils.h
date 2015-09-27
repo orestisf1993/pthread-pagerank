@@ -2,6 +2,7 @@
 #define ASSIGNMENT_4_UTILS_H
 
 #include <limits.h>
+#include <stdbool.h>
 
 #define MAX_GENERATIONS 10000
 #define DEFAULT_NTHREADS 4
@@ -45,9 +46,10 @@ typedef struct {
 void *calculate_gen(void *_args);
 void read_from_file(const char *filename);
 void print_gen(unsigned int nthreads);
-void init_prob(void);
+void init_prob(char *custom_F, char *custom_E);
 void print_usage(char **argv);
 void save_res(int size, int threads, unsigned int final_gen, double time);
+float calculate_const_add(void);
 parm *split_work(int smart_split);
 
 extern graph L;
@@ -60,5 +62,8 @@ extern node_id size_no_in;
 extern uint64_t n_vertices;
 
 extern prob_type *P;
+extern prob_type *E;
+extern prob_type *P_new;
+extern prob_type constant_add;
 
 #endif // ASSIGNMENT_4_UTILS_H
