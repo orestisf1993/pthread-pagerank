@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <getopt.h>
 #include "utils.h"
 
 graph L = NULL;
@@ -144,4 +145,52 @@ void init_prob(char *custom_F, char *custom_E) {
         }
         if (!n_inbound[i]) size_no_in++;
     }
+}
+
+main_options argument_parser(int argc, char **argv) {
+    main_options result;
+    result.filename = DEFAULT_NODES_FILENAME;
+    result.smart_split = false;
+    result.custom_F = NULL;
+    result.custom_E = NULL;
+    result.nthreads = DEFAULT_NTHREADS;
+
+    static struct option long_options[] = {
+            {"nodes-file", required_argument, NULL, 'n'},
+            {"nthreads", required_argument, NULL, 't'},
+            {"custom-f", required_argument, NULL, 'f'},
+            {"custom-e", required_argument, NULL, 'e'},
+            {"smart-split", no_argument, NULL, 's'},
+            {"help", no_argument, NULL, 'h'},
+            {NULL, 0, NULL, 0}
+    };
+
+    while (1) {
+        int opt = getopt_long(argc, argv, "n:t:hsf:e:", long_options, NULL);
+        if (opt == -1) break;
+        switch (opt) {
+            case 'n':
+                result.filename = optarg;
+                break;
+            case 't':
+                result.nthreads = (unsigned int) strtoul(optarg, NULL, 0);
+                break;
+            case 'h':
+                print_usage(argv);
+                exit(EXIT_SUCCESS);
+            case 's':
+                result.smart_split = true;
+                break;
+            case 'f':
+                result.custom_F = optarg;
+                break;
+            case 'e':
+                result.custom_E = optarg;
+                break;
+            default:
+                print_usage(argv);
+                exit(E_UNRECOGNISED_ARGUMENT);
+        }
+    }
+    return result;
 }

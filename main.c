@@ -4,13 +4,11 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <stdlib.h>
-#include <getopt.h>
 #include <sys/time.h>
 #include <math.h>
-#include <stdbool.h>
 #include "utils.h"
 
-static unsigned int nthreads = DEFAULT_NTHREADS;
+static unsigned int nthreads;
 
 static pthread_barrier_t barrier;
 
@@ -133,55 +131,16 @@ parm *split_work(int smart_split) {
 }
 
 int main(int argc, char **argv) {
-    const char *filename = DEFAULT_NODES_FILENAME;
-    bool smart_split = false;
-    char *custom_F = NULL;
-    char *custom_E = NULL;
 
-    static struct option long_options[] = {
-            {"nodes-file", required_argument, NULL, 'n'},
-            {"nthreads", required_argument, NULL, 't'},
-            {"custom-f", required_argument, NULL, 'f'},
-            {"custom-e", required_argument, NULL, 'e'},
-            {"smart-split", no_argument, NULL, 's'},
-            {"help", no_argument, NULL, 'h'},
-            {NULL, 0, NULL, 0}
-    };
-
-    while (1) {
-        int opt = getopt_long(argc, argv, "n:t:hsf:e:", long_options, NULL);
-        if (opt == -1) break;
-        switch (opt) {
-            case 'n':
-                filename = optarg;
-                break;
-            case 't':
-                nthreads = (unsigned int) strtoul(optarg, NULL, 0);
-                break;
-            case 'h':
-                print_usage(argv);
-                exit(EXIT_SUCCESS);
-            case 's':
-                smart_split = true;
-                break;
-            case 'f':
-                custom_F = optarg;
-                break;
-            case 'e':
-                custom_E = optarg;
-                break;
-            default:
-                print_usage(argv);
-                exit(E_UNRECOGNISED_ARGUMENT);
-        }
-    }
+    main_options arg_options = argument_parser(argc, argv);
+    nthreads = arg_options.nthreads;
 
     #ifdef DEBUG
-    fprintf(stderr, "opening file %s, operating with %u threads\n", filename, nthreads);
+    fprintf(stderr, "opening file %s, operating with %u threads\n", arg_options.filename, nthreads);
     #endif
 
-    read_from_file(filename);
-    init_prob(custom_F, custom_E);
+    read_from_file(arg_options.filename);
+    init_prob(arg_options.custom_F, arg_options.custom_E);
 
     fprintf(stderr, "Read %ux%u graph with:\n"
                     "\t%"PRIu64" vertices\n"
@@ -192,7 +151,7 @@ int main(int argc, char **argv) {
     pthread_t *threads = malloc(nthreads * sizeof(pthread_t));
     local_terminate_flag = malloc(nthreads * sizeof(int));
 
-    parm *args = split_work(smart_split);
+    parm *args = split_work(arg_options.smart_split);
 
     struct timeval start, end;
     gettimeofday(&start, NULL);

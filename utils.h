@@ -43,12 +43,21 @@ typedef struct {
     unsigned int gen;
 } parm;
 
+typedef struct {
+    const char *filename;
+    bool smart_split;
+    char *custom_F;
+    char *custom_E;
+    unsigned int nthreads;
+} main_options;
+
 void *calculate_gen(void *_args);
 void read_from_file(const char *filename);
 void print_gen(unsigned int nthreads);
 void init_prob(char *custom_F, char *custom_E);
 void print_usage(char **argv);
 void save_res(int size, int threads, unsigned int final_gen, double time);
+main_options argument_parser(int argc, char **argv);
 float calculate_const_add(void);
 parm *split_work(int smart_split);
 
