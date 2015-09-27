@@ -54,6 +54,9 @@
 assignment_4
 bin/
 
+# Explicit images
+!doc/pagerank-cover.pdf
+
 # Allow cmake
 !CMakeLists.txt
 
