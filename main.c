@@ -97,7 +97,15 @@ void *calculate_gen(void *_args) {
         pthread_barrier_wait(&barrier);
         if (!running) break;
     }
-    pthread_exit(tid ? NULL : (void *) (uintptr_t) gen);
+
+    if (!tid) {
+        unsigned int *ret = malloc(sizeof(unsigned int));
+        *ret = gen;
+        return ret;
+    }
+    else {
+        return NULL;
+    }
 }
 
 parm *split_work(int smart_split) {
@@ -200,8 +208,8 @@ int main(int argc, char **argv) {
         args[i].tid = i;
         pthread_create(&threads[i], NULL, calculate_gen, (void *) &args[i]);
     }
-    void *final_gen = NULL;
-    pthread_join(threads[0], &final_gen);
+    unsigned int *final_gen = malloc(sizeof(unsigned int));
+    pthread_join(threads[0], (void **) &final_gen);
     for (unsigned int i = 1; i < nthreads; i++) {
         pthread_join(threads[i], NULL);
     }
@@ -214,14 +222,16 @@ int main(int argc, char **argv) {
 
     fprintf(stderr,
             "finished on generation %u after %g sec\n",
-            *(unsigned int *) final_gen,
+            *final_gen,
             elapsed);
-    save_res(N, nthreads, *(unsigned int *) final_gen, elapsed);
+    save_res(N, nthreads, *final_gen, elapsed);
     print_gen(nthreads);
 
     prob_type sum = 0.0;
     for (node_id i = 0; i < N; i++) sum += P[i];
     printf("sum=%f\n", sum);
+
+    free(final_gen);
 
     return EXIT_SUCCESS;
 }

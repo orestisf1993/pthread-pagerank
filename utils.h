@@ -39,6 +39,7 @@ typedef struct {
     unsigned int tid;
     node_id start;
     node_id end;
+    unsigned int gen;
 } parm;
 
 void *calculate_gen(void *_args);
