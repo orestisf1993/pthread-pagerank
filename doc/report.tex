@@ -19,6 +19,8 @@
   Τομέας Ηλεκτρονικής,\\
   Τμήμα Ηλ. Μηχανικών / Μηχανικών ΗΥ,\\
   Αριστοτέλειο Πανεπιστήμιο Θεσσαλονίκης}
+  
+\includeonly{code-explanation}
 
 \begin{document}
 \maketitle
@@ -38,6 +40,14 @@
 	\item[report.pdf] Αυτή η αναφορά.
 	\item[run\_data.py] Script σε python3 για την παραγωγή δεδομένων και τον έλεγχό τους.
 \end{description}
+
+\noindent Για build τρέχουμε:
+\begin{lstlisting}[language=bash, caption={build commands}, escapechar=$]
+mkdir bin
+cd bin
+cmake ..
+make
+\end{lstlisting}
 
 \include{intro}
 \include{code-explanation}
