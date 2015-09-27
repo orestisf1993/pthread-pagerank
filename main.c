@@ -28,7 +28,7 @@ float calculate_const_add(void) {
 }
 
 #define D 0.85f
-void *calculate_gen(void *_args) {
+static void *calculate_gen(void *_args) {
     const parm *args = (parm *) _args;
     const unsigned int tid = args->tid;
     const node_id start = args->start;
@@ -82,7 +82,7 @@ void *calculate_gen(void *_args) {
 
     if (!tid) {
         unsigned int *ret = malloc(sizeof(unsigned int));
-        *ret = gen;
+        *ret = gen + 1;
         return ret;
     }
     else {
@@ -90,7 +90,7 @@ void *calculate_gen(void *_args) {
     }
 }
 
-parm *split_work(int smart_split) {
+static parm *split_work(int smart_split) {
     parm *args = malloc(nthreads * sizeof(parm));
 
     if (smart_split) {
