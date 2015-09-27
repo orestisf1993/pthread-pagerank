@@ -134,11 +134,7 @@ int main(int argc, char **argv) {
 
     main_options arg_options = argument_parser(argc, argv);
     nthreads = arg_options.nthreads;
-
-    #ifdef DEBUG
     fprintf(stderr, "opening file %s, operating with %u threads\n", arg_options.filename, nthreads);
-    #endif
-
     read_from_file(arg_options.filename);
     init_prob(arg_options.custom_F, arg_options.custom_E);
 
