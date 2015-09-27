@@ -28,7 +28,7 @@ float calculate_const_add(void) {
 }
 
 #define D 0.85f
-static void *calculate_gen(void *_args) {
+static void *calculate_pagerank(void *_args) {
     const parm *args = (parm *) _args;
     const unsigned int tid = args->tid;
     const node_id start = args->start;
@@ -154,7 +154,7 @@ int main(int argc, char **argv) {
 
     for (unsigned int i = 0; i < nthreads; i++) {
         args[i].tid = i;
-        pthread_create(&threads[i], NULL, calculate_gen, (void *) &args[i]);
+        pthread_create(&threads[i], NULL, calculate_pagerank, (void *) &args[i]);
     }
     unsigned int *final_gen = malloc(sizeof(unsigned int));
     pthread_join(threads[0], (void **) &final_gen);
