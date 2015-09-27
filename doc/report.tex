@@ -1,0 +1,44 @@
+%&preamble
+% Save static part at preamble.tex and use command:
+% xelatex -ini -shell-escape -job-name="preamble" "&xelatex preamble.tex\dump"
+% to produce preamble.fmt
+
+% Only for xelatex and lualatex. It provides an automatic and unified interface to feature-rich AAT and OpenType fonts.
+% https://ctan.org/pkg/fontspec
+\usepackage{fontspec}
+\setmainfont{DejaVu Serif}
+\renewcommand{\contentsname}{Περιεχόμενα}
+\renewcommand{\listfigurename}{Λίστα Σχημάτων}
+\renewcommand{\figurename}{Σχήμα}
+\renewcommand{\lstlistingname}{Καταχώρηση}
+\renewcommand{\lstlistlistingname}{List of \lstlistingname s}
+
+\title{4η Εργασία στα Παράλληλα και Διανεμημένα Συστήματα\\Pagerank}
+\author{Ορέστης Φλώρος-Μαλιβίτσης, 7796\\
+  Χαμζάς Κωσταντίνος, 7798\\
+  Τομέας Ηλεκτρονικής,\\
+  Τμήμα Ηλ. Μηχανικών / Μηχανικών ΗΥ,\\
+  Αριστοτέλειο Πανεπιστήμιο Θεσσαλονίκης}
+
+\begin{document}
+\maketitle
+\tableofcontents
+%\listoffigures
+\newpage
+
+% Δομή του Project
+\chapter*{Δομή του Project} \label{project-structure}
+
+\begin{description}
+	\item[doc/] Φάκελος με τα *.tex αρχεία για την παραγωγή της αναφοράς.
+	\item[doc/plot/] Φάκελος με τα αρχεία των γραφημάτων.
+	\item[page-rank.pdf] Η εκφώνηση.
+	\item[main.c] Ο κώδικας του προγράμματος σε c.
+	\item[matlab/] Φάκελος με τα scripts σε MATLAB.
+	\item[report.pdf] Αυτή η αναφορά.
+	\item[run\_data.py] Script σε python3 για την παραγωγή δεδομένων και τον έλεγχό τους.
+\end{description}
+
+\include{intro}
+
+\end{document}
