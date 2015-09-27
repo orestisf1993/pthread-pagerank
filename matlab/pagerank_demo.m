@@ -9,6 +9,7 @@ end
     
 % Use the power method to compute the eigenvector that correspond to the
 % largest eigenvalue (Ranks)
+spy(G)
 [x,cnt] = pagerankpow(G);
 x_c = get_results(results_filename, n);
 
