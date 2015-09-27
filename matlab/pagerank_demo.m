@@ -1,22 +1,27 @@
-function pagerank_demo(nodes_filename, results_filename)
+function pagerank_demo(nodes_filename, results_filename,name )
 
 G = node_read(nodes_filename);
 [~, n] = size(G);
 
+if nargin==2
+    name ='SimpleNodes';
+end
+    
 % Use the power method to compute the eigenvector that correspond to the
 % largest eigenvalue (Ranks)
 [x,cnt] = pagerankpow(G);
 x_c = get_results(results_filename, n);
 
-% plot the ranks
 figure
+% plot the ranks
+subplot(2,1,1)
 bar(x)
-title('Page Ranks Matlab')
+title(['Page Ranks Matlab(',name,')'])
 print -depsc2 plotm.eps
 
-figure
+subplot(2,1,2)
 bar(x_c)
-title('Page Ranks C')
+title(['Page Ranks C (',name,')'])
 print -depsc2 plotc.eps
 
 error = sum((x-x_c).^2)/size(G,1);

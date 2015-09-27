@@ -12,7 +12,7 @@ call("rm -f gen_results/*.bin", shell=True)
 
 nodefiles = os.listdir("nodeFiles")
 print(nodefiles)
-threads = [3]
+threads = [1, 2, 3, 4]
 for file in nodefiles:
     for thread in threads:
         filename = "nodeFiles/" + file
