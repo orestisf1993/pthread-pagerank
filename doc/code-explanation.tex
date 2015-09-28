@@ -1,1 +1,127 @@
-\chapter{Υλοποίση σε C}
+\chapter{Υλοποίηση σε C}
+
+Το αρχείο main.c περιέχει την \lstinline!main()! συνάρτηση του προγράμματος
+και την συνάρτηση \lstinline!calculate_pagerank()!
+που είναι η κυρίως ρουτίνα για τον υπολογισμό του διανύσματος $P$.
+
+Το αρχείο io.c περιέχει συναρτήσεις σχετικά με την επικοινωνία του προγράμματος με τον χρήστη.
+
+\section{io.c}
+Από την \lstinline!print_usage()!, οι επιλογές του προγράμματος είναι:
+
+\begin{verbatim}
+usage: ./assignment_4 [options]
+
+	-h, --help: This help.
+	-n, --nodes-file=FILENAME: File to use for input graph. Default is nodes.txt
+	-t, --nthreads=NUM: Number of threads used to run pagerank.
+	-f, --custom-f: Binary file to use for initial P. Default is uniform distribution.
+	-e, --custom-e: Binary file to use for initial E. Default is uniform distribution.
+	-s, --smart-split: Split work between threads based on workload, not nodes.
+\end{verbatim}
+
+Η συνάρτηση \lstinline!read_from_file()! ανοίγει το αρχείο που προσδιορίζεται από την επιλογή \lstinline!--nodes-file=! και
+διαβάζει τον γράφο για στον οποίο θα εκτελεσθεί ο pagerank.
+Γίνεται η υπόθεση ότι το αρχείο είναι απλό text file όπου τα σχόλια αρχίζουν με '\#' και υπάρχουν
+2 ακέραιοι ανά γραμμή. Ο δεύτερος συμβολίζει τον node στον οποίο καταλήγει ο πρώτος.
+
+Η συνάρτηση \lstinline!print_gen()! αποθηκεύει το αποτέλεσμα $P$ σε ένα binary file.
+Η \lstinline!save_res()! αποθηκεύει πληροφορίες όπως χρόνος εκτέλεσης, αριθμός threads, αριθμός γενεών και μέγεθος.
+
+Η συνάρτηση \lstinline!init_prob()! αρχικοποιεί τις τιμές των $P$, $E$.
+Αν δεν δοθεί αρχείο από το οποίο μπορούν να διαβαστούν οι αρχικές τιμές τους, χρησιμοποιείται ομοιόμορφη κατανομή.
+
+Η συνάρτηση \lstinline!argument_praser()! επεξεργάζεται τα ορίσματα που δίνονται στο πρόγραμμα.
+
+\section{main.c}
+
+Η συνάρτηση \lstinline!split_work()! χρησιμοποιείται για να αρχικοποιήσει τα ορίσματα των threads και να μοιράσει την δουλειά μεταξύ τους.
+Αν είναι ενεργή η επιλογή \lstinline!--smart-split!, ο διαμοιρασμός των nodes στα threads γίνεται με βάση των αριθμό των inbound links του καθενός.
+Αλλιώς, μοιράζονται ομοιόμορφα με το κάθε thread να παίρνει $\frac{N}{nthreads}$ nodes.
+
+Η συνάρτηση \lstinline!calculate_pagerank()! πραγματοποιεί τους υπολογισμούς για το pa\-ge\-rank του $P$.
+Η συνάρτηση έχει υλοποιηθεί έτσι ώστε να έχει ίδιο αποτέλεσμα με το script του MATLAB.
+
+Στην μεταβλητή \lstinline!prob_type link_prob! υπολογίζεται η πιθανότητα από την σύνδεση μέσω κάποιου άλλου κόμβου.
+Το \lstinline!node_id n_inbound[i]! είναι ο αριθμός των εισερχόμενων κόμβων στον κόμβο \lstinline!i!
+ενώ ο \lstinline!node_id n_inbound[j]! ο αριθμός των εξερχόμενων από τον j.
+Η εντολή \lstinline!const node_id j = L[i][x];! θέτει στην \lstinline!j! το x-οστό εισερχόμενο κόμβο στον i-οστό κόμβο.
+\begin{lstlisting}[caption={υπολογισμός link\_prob}, escapechar=$]
+prob_type link_prob = 0;
+for (node_id x = 0; x < n_inbound[i]; x++) {
+    const node_id j = L[i][x];
+    link_prob += P[j] / n_outbound[j];
+}
+link_prob += constant_add;
+\end{lstlisting}
+Το \lstinline!constant_add! είναι η \hyperref[line:c_eq_0]{ποσότητα} που προστίθεται και στη συνάρτηση pagerankpow.m της MATLAB.
+Υπολογίζεται σε κάθε επανάληψη από ένα thread και είναι κοινό για όλα τα threads.
+Ο υπολογισμός γίνεται από την \hyperref[lst:calculate_const_add]{calculate\_const\_add()}.
+Ο πίνακας \lstinline!node_id *no_outbounds! κρατάει τα στοιχεία χωρίς εξερχόμενους κόμβους.
+\begin{lstlisting}[language=matlab, caption={το constant\_add στο pagerankpow.m}, escapechar=$]
+if c(j) == 0
+	x = x + z(j)/n;$\label{line:c_eq_0}$
+else
+	x(L{j}) = x(L{j}) + z(j)/c(j);
+end
+\end{lstlisting}
+
+\begin{lstlisting}[caption={υπολογισμός const\_add}, escapechar=$, label={lst:calculate_const_add}]
+float calculate_const_add(void) {
+    // calculate the constant for links without outbound links.
+    float res = 0.0f;
+    for (node_id x = 0; x < size_no_out; x++) {
+        const node_id j = no_outbounds[x];
+        res += P[j];
+    }
+    res /= (prob_type) N;
+    return res;
+}
+\end{lstlisting}
+
+Αν χρησιμοποιείται ομοιόμορφη κατανομή για το $E$ προϋπολογίζεται η τιμή $(1-d) \cdot E$ ως:
+\lstinline!const prob_type const_E = (1 - D) / (prob_type) N;!.
+Αλλιώς, χρησιμοποιείται το array \lstinline!prob_type *E!.
+
+Για τον τερματισμό των threads χρησιμοποιείται ο πίνακας \lstinline!static bool *local_terminate_flag!.
+Κάθε thread ελέγχει μία \hyperref[lst:local_terminate]{συνθήκη συνέχειας} για κάθε στοιχείο του \lstinline!P!.
+\begin{lstlisting}[caption={έλεγχο συνέχειας ανά thread}, escapechar=$, label={lst:local_terminate}]
+P_new[i] = D * link_prob + (args->custom_E ? (1 - D) * E[i] : const_E);
+if (local_terminate_flag[tid]) {
+    if (fabsf(P_new[i] - P[i]) > MAX_ERROR) {
+        local_terminate_flag[tid] = 0;
+    }
+}
+\end{lstlisting}
+
+Στο τέλος κάθε επανάληψης ένα thread αναλαμβάνει να:
+\begin{itemize}
+	\item κάνει \hyperref[line:swap-P-P_new]{swap} τους pointers \lstinline!P! και \lstinline!P_new! 
+	\item \hyperref[line:global-check-terminate]{ελέγξει} αν οι συνθήκες συνέχειας είναι \lstinline!false! για κάθε thread
+	\item \hyperref[line:call-calculate_const_add]{καλέσει} την \lstinline!calculate_const_add()!
+\end{itemize}
+\begin{lstlisting}[caption={swap P, P\_new και έλεγχος τερματισμού.}, escapechar=$, label={lst:gen_barrier}]
+const int res = pthread_barrier_wait(&barrier);
+if (res == PTHREAD_BARRIER_SERIAL_THREAD) {
+    // swap P_new with P.$\label{line:swap-P-P_new}$
+    prob_type *tmp;
+    tmp = P;
+    P = P_new;
+    P_new = tmp;
+
+    running = false;$\label{line:global-check-terminate}$
+    for (unsigned int i = 0; i < nthreads; i++) {
+        if (!local_terminate_flag[i]) {
+            running = true;
+            break;
+        }
+    }
+    if (running) {
+        constant_add = calculate_const_add();$\label{line:call-calculate_const_add}$
+    }
+}
+
+pthread_barrier_wait(&barrier);
+if (!running) break;
+\end{lstlisting}
+Τα υπόλοιπα threads περιμένουν για την επόμενη γενιά ή τερματίζονται αν \lstinline!running == false!.
