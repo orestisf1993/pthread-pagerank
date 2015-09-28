@@ -112,7 +112,6 @@ prob_type constant_add;
 void init_prob(char *custom_F, char *custom_E) {
     P = malloc(N * sizeof(prob_type));
     P_new = malloc(N * sizeof(prob_type));
-    E = malloc(N * sizeof(prob_type));
 
     if (custom_F != NULL) {
         FILE *fp = fopen(custom_F, "r");
@@ -127,17 +126,20 @@ void init_prob(char *custom_F, char *custom_E) {
     }
 
     if (custom_E != NULL) {
+        E = malloc(N * sizeof(prob_type));
         FILE *fp = fopen(custom_E, "r");
         if (fp == NULL) exit(E_FILE_ERROR);
         fseek(fp, SEEK_SET, 0);
         fread(E, sizeof(prob_type), N, fp);
         fclose(fp);
     }
+    else {
+        E = NULL;
+    }
 
     for (node_id i = 0; i < N; i++) {
         // uniform distribution
         if (custom_F == NULL) P[i] = 1 / (prob_type) N;
-        if (custom_E == NULL) E[i] = 1 / (prob_type) N;
 
         // Any node with no out links is linked to all nodes to emulate the matlab script.
         if (!n_outbound[i]) {

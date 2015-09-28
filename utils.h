@@ -41,6 +41,7 @@ typedef struct {
     node_id start;
     node_id end;
     unsigned int gen;
+    bool custom_E;
 } parm;
 
 typedef struct {

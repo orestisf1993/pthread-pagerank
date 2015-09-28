@@ -34,6 +34,8 @@ static void *calculate_pagerank(void *_args) {
     const node_id start = args->start;
     const node_id end = args->end;
 
+    const prob_type const_E = (1 - D) / (prob_type) N;
+
     #ifdef DEBUG
     fprintf(stderr, "tid %u, start %u, end %u chunk %u\n", tid, start, end, end - start);
     #endif
@@ -49,7 +51,7 @@ static void *calculate_pagerank(void *_args) {
             }
             link_prob += constant_add;
 
-            P_new[i] = D * link_prob + (1 - D) * E[i];
+            P_new[i] = D * link_prob + (args->custom_E ? (1 - D) * E[i] : const_E);
             if (local_terminate_flag[tid]) {
                 if (fabsf(P_new[i] - P[i]) > MAX_ERROR) {
                     local_terminate_flag[tid] = 0;
@@ -107,7 +109,6 @@ static parm *split_work(int smart_split) {
                 chunk = 0;
                 args[tid++].end = i;
                 args[tid].start = i;
-                args[tid].tid = tid;
                 if (tid == nthreads - 1) break;
             }
         }
@@ -122,7 +123,6 @@ static parm *split_work(int smart_split) {
     if (!smart_split) {
         const node_id chunk = N / nthreads;
         for (unsigned int tid = 0; tid < nthreads; tid++) {
-            args[tid].tid = tid;
             args[tid].start = (node_id) (tid) * chunk;
             args[tid].end = args[tid].start + chunk + (tid == nthreads - 1) * (N % nthreads);
         }
@@ -153,6 +153,7 @@ int main(int argc, char **argv) {
 
     for (unsigned int i = 0; i < nthreads; i++) {
         args[i].tid = i;
+        args[i].custom_E = (arg_options.custom_E != NULL);
         pthread_create(&threads[i], NULL, calculate_pagerank, (void *) &args[i]);
     }
     unsigned int *final_gen;
@@ -167,10 +168,7 @@ int main(int argc, char **argv) {
     free(args);
     free(threads);
 
-    fprintf(stderr,
-            "finished on generation %u after %g sec\n",
-            *final_gen,
-            elapsed);
+    printf("finished on generation %u after %g sec\n", *final_gen, elapsed);
     save_res(N, nthreads, *final_gen, elapsed);
     print_gen(nthreads);
 
