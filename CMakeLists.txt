@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 2.8)
 project(assignment_4 C)
 
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif(NOT CMAKE_BUILD_TYPE)
+message(STATUS "building for ${CMAKE_BUILD_TYPE}")
+
 include(CheckCCompilerFlag)
 find_package(Threads REQUIRED)
 
