@@ -120,17 +120,18 @@ void init_prob(char *custom_F, char *custom_E) {
         fseek(fp, SEEK_SET, 0);
         fread(P, sizeof(prob_type), N, fp);
         fclose(fp);
+        constant_add = calculate_const_add();
     }
+    else {
+        constant_add = (prob_type) size_no_out / (prob_type) (N) / (prob_type) N;
+    }
+
     if (custom_E != NULL) {
         FILE *fp = fopen(custom_E, "r");
         if (fp == NULL) exit(E_FILE_ERROR);
         fseek(fp, SEEK_SET, 0);
         fread(E, sizeof(prob_type), N, fp);
         fclose(fp);
-        constant_add = calculate_const_add();
-    }
-    else {
-        constant_add = (prob_type) size_no_out / (prob_type) (N) / (prob_type) N;
     }
 
     for (node_id i = 0; i < N; i++) {
