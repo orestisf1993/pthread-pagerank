@@ -12,9 +12,8 @@ static unsigned int nthreads;
 
 static pthread_barrier_t barrier;
 
-static int running = 1;
-static int *local_terminate_flag;
-// initialize for uniform distribution.
+static bool running = true;
+static bool *local_terminate_flag;
 
 float calculate_const_add(void) {
     // calculate the constant for links without outbound links.
@@ -66,10 +65,10 @@ static void *calculate_pagerank(void *_args) {
             P = P_new;
             P_new = tmp;
 
-            running = 0;
+            running = false;
             for (unsigned int i = 0; i < nthreads; i++) {
                 if (!local_terminate_flag[i]) {
-                    running = 1;
+                    running = true;
                     break;
                 }
             }
