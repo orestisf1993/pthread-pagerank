@@ -83,6 +83,8 @@ bin/
 *.mtc
 *.mtc1
 *.synctex.gz
+*.fls
+*.fdb_latexmk
 
 #matlab
 *.m~
