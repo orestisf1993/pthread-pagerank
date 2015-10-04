@@ -8,7 +8,7 @@ O γράφος που δημιουργήθηκε από το stackoveflow φαί
 \hyperref[fig:stackGraph]{\figurename{} \ref{fig:stackGraph}}
 \begin{figure}[h]
 	\centerline{\includegraphics[width=0.6\textwidth]{stackGraph.pdf}}
-	\caption{Ο γράφος συνδέσεων}
+	\caption{Γράφος συνδέσεων stackoverflow.}
 	\label{fig:stackGraph}
 \end{figure}
  
@@ -45,7 +45,7 @@ O γράφος που δημιουργήθηκε από το stackoveflow φαί
 	\centering
 	\subfloat[]{\includegraphics[width=0.5\textwidth]{slash.png}}
 	\subfloat[]{\includegraphics[width=0.5\textwidth]{slashGraphDet.pdf}}
-	\caption{O γράφος συνδέσεων με μία λεπτομέρεια στα αριστερά}
+	\caption{O γράφος συνδέσεων slashdot με μία λεπτομέρεια στα αριστερά}
 	\label{fig:slashGraph}
 \end{figure}
 
@@ -69,17 +69,65 @@ O γράφος που δημιουργήθηκε από το stackoveflow φαί
 Το γεγονός όμως ότι είναι πολύ πιο αραιός τον κάνει να συγκλίνει στο τελικό διάνυσμα πολύ πιο γρήγορα.
 \clearpage
 \section{Χρόνος εκτέλεσης}
-Οι γράφοι που χρησιμοποιήθηκαν βρίσκονται στα ακόλουθα link:\\
+Οι γράφοι που χρησιμοποιήθηκαν βρίσκονται στα ακόλουθα link:
 \begin{enumerate} 
 	\item \href{https://snap.stanford.edu/data/wiki-Vote.html}{Wiki-Vote}.
 	\item \href{https://snap.stanford.edu/data/email-EuAll.html}{email-EuAll}.
-	\item\href{https://snap.stanford.edu/data/web-BerkStan.html}{web-BerkStan}.
-	\item\href{https://snap.stanford.edu/data/web-NotreDame.html}{web-NotreDame}.
-	\item\href{https://snap.stanford.edu/data/web-Google.html}{web-Google}.
-	\item\href{https://snap.stanford.edu/data/soc-pokec.html}{soc-pokec}.
+	\item \href{https://snap.stanford.edu/data/web-BerkStan.html}{web-BerkStan}.
+	\item \href{https://snap.stanford.edu/data/web-NotreDame.html}{web-NotreDame}.
+	\item \href{https://snap.stanford.edu/data/web-Google.html}{web-Google}.
+	\item \href{https://snap.stanford.edu/data/soc-pokec.html}{soc-pokec}.
 \end{enumerate}
 %TODO: link dropbox με τα παντα
-%TODO: graphs με coeff
 
-\clearpage
-\section{Σύγκλιση γενεών}
+Πληροφορίες επεξεργαστή στον οποίο έγινε η εκτέλεση:
+\begin{lstlisting}[style=Bash]
+$ lscpu
+Architecture:          x86_64
+CPU op-mode(s):        32-bit, 64-bit
+Byte Order:            Little Endian
+CPU(s):                6
+On-line CPU(s) list:   0-5
+Thread(s) per core:    2
+Core(s) per socket:    3
+Socket(s):             1
+NUMA node(s):          1
+Vendor ID:             AuthenticAMD
+CPU family:            21
+Model:                 2
+Model name:            AMD FX(tm)-6300 Six-Core Processor
+Stepping:              0
+CPU MHz:               4113.398
+BogoMIPS:              8226.79
+Virtualization:        AMD-V
+L1d cache:             16K
+L1i cache:             64K
+L2 cache:              2048K
+L3 cache:              8192K
+NUMA node0 CPU(s):     0-5
+\end{lstlisting}
+
+\noindent
+\begin{minipage}{\textwidth}
+	\centering
+	\includegraphics[width=0.99\textwidth]{plots/absolute_time.pdf}
+	\captionof{figure}{Χρόνος εκτέλεσης σε σχέση με αριθμό thread και αριθμό κόμβων.}
+	\label{fig:absolute_time}
+\end{minipage}
+
+\noindent
+\begin{minipage}{\textwidth}
+	\centering
+	\includegraphics[height=0.99\textheight]{plots/relative_time.pdf}
+	\captionof{figure}{Επιτάχυνση σε σχέση με 1 thread.}
+	\label{fig:relative_time}
+\end{minipage}
+
+\noindent
+\begin{minipage}{\textwidth}
+	\section{Σύγκλιση γενεών}
+	\centering
+	\includegraphics[angle=0,height=0.95\textheight]{plots/generation.pdf}
+	\captionof{figure}{Αριθμός επαναλήψεων για σύγκλιση σε σχέση με αριθμό κόμβων.}
+	\label{fig:generation}
+\end{minipage}
