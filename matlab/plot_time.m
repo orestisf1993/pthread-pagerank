@@ -1,3 +1,4 @@
+%% read data
 Folder = '../time_results';
 FileName = textscan(ls(Folder),'%s');
 FileName = FileName{1}{1};
@@ -55,36 +56,36 @@ for i = 1:length(sizeDict)
     Gen_data(i) = Generations(g(1));
     
 end
-
-figure(1)
-plot(Time_data)
-legend(num2str((threadDict(:))),'Location','NorthWest')
+%% plot absolute time
+h = figure('visible','off', 'Menubar','none');
+plot(Time_data, 'LineWidth', 2.0);
+legend(num2str((threadDict(:))),'Location','NorthWest');
 set(gca, 'Xtick',1:length(sizeDict),'XTickLabel', sizeDict);
-xlabel('Number of nodes')
-ylabel('time (sec)')
-title ( 'Absolute time ')
-print -depsc2 absolute_time.eps
+xlabel('Number of nodes');
+ylabel('time (sec)');
+title ('Absolute time');
+portrait_print(h, 'absolute_time.pdf');
 
-
+%% plot relative time
 threadDict_2 = threadDict(2:end);
 Time_data_2 =  Time_data(:,2:end);
-base = Time_data(:,1)*[1 1 1];
+base = Time_data(:,1)*ones(1, length(threadDict_2));
 Time_data_2 =  base./Time_data_2;
 
-figure(2)
-plot(Time_data_2)
-legend(num2str((threadDict_2(:))),'Location','NorthWest')
+h = figure('visible','off', 'Menubar','none');
+plot(Time_data_2, 'LineWidth', 2.0);
+legend(num2str((threadDict_2(:))),'Location','NorthWest');
 set(gca, 'Xtick',1:length(sizeDict),'XTickLabel', sizeDict);
-xlabel('Number of nodes')
-ylabel('time (sec)')
-title ( 'Relative time ')
-print -depsc2 relative_time.eps
+xlabel('Number of nodes');
+ylabel('times');
+title ('Speedup');
+portrait_print(h, 'relative_time.pdf');
 
 
-
-figure(3)
-plot(Gen_data)
+%% plot generations graph
+h = figure('visible','off', 'Menubar','none');
+plot(Gen_data, 'LineWidth', 2.0);
 set(gca, 'Xtick',1:length(sizeDict),'XTickLabel', sizeDict);
-xlabel('Number of nodes')
-ylabel('Generations til convergeance')
-print -depsc2 generation.eps
+xlabel('Number of nodes');
+ylabel('Generations til convergeance');
+portrait_print(h, 'generation.pdf');
