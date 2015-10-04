@@ -1,5 +1,5 @@
 %&preamble
-% Save static part at preamble.tex and use command:
+% Save static part as preamble.tex and use command:
 % xelatex -ini -shell-escape -job-name="preamble" "&xelatex preamble.tex\dump"
 % to produce preamble.fmt
 
@@ -23,7 +23,7 @@
 \begin{document}
 \maketitle
 \tableofcontents
-%\listoffigures
+\listoffigures
 \newpage
 
 % Δομή του Project
@@ -40,13 +40,12 @@
 \end{description}
 
 \noindent Για build τρέχουμε:
-\begin{lstlisting}[language=bash, caption={build commands}, escapechar=$]
-mkdir bin
-cd bin
-cmake ..
-make
+\begin{lstlisting}[style=Bash]
+$ mkdir -p bin
+$ cd bin
+$ cmake ..
+$ make
 \end{lstlisting}
-
 \include{intro}
 \include{code-explanation}
 \include{results}

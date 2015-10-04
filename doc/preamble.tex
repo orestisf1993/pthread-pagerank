@@ -119,4 +119,16 @@
   tabsize=4,                       % sets default tabsize to 2 spaces
   title=\lstname                   % show the filename of files included with \lstinputlisting; also try caption instead of title
 }
+\lstdefinestyle{Bash}
+{language=bash,
+keywordstyle=\color{blue},
+basicstyle=\ttfamily,
+breaklines=true,
+alsoletter={:~$},
+morekeywords=[2]{peter@kbpet:},
+keywordstyle=[2]{\color{red}},
+literate={\$}{{\textcolor{red}{\$}}}1 
+         {:}{{\textcolor{red}{:}}}1
+         {~}{{\textcolor{red}{\textasciitilde}}}1,
+}
 %\endofdump
